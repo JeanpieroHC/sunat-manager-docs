@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arquitectura · sunat-manager</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<main>
+  <h1>🏗️ Arquitectura</h1>
+  <p class="lead">Cómo está organizada la librería por dentro y cómo se corresponde con Greenter (PHP).</p>
+
+  <h2>Mapa de módulos</h2>
+  <div class="diagram">
+    <svg viewBox="0 0 860 470" role="img" aria-label="Módulos de la librería">
+      <!-- capa 1 -->
+      <text x="10" y="22" class="svg-sub">ENTRADA</text>
+      <rect class="svg-box accent" x="10" y="30" width="200" height="56" rx="8"/><text class="svg-title" x="110" y="55" text-anchor="middle">mapper</text><text class="svg-sub" x="110" y="73" text-anchor="middle">JSON → modelos</text>
+      <rect class="svg-box accent" x="230" y="30" width="200" height="56" rx="8"/><text class="svg-title" x="330" y="55" text-anchor="middle">calc</text><text class="svg-sub" x="330" y="73" text-anchor="middle">impuestos, letras, leyendas</text>
+      <rect class="svg-box accent" x="450" y="30" width="200" height="56" rx="8"/><text class="svg-title" x="550" y="55" text-anchor="middle">xml-parser</text><text class="svg-sub" x="550" y="73" text-anchor="middle">XML → modelos</text>
+      <!-- core -->
+      <rect class="svg-box primary" x="10" y="110" width="840" height="56" rx="8"/><text class="svg-title" x="430" y="135" text-anchor="middle">core — modelos</text><text class="svg-sub" x="430" y="153" text-anchor="middle">Invoice · Note · Despatch · Summary · Voided · Retention · Perception · Company · Client · respuestas</text>
+      <!-- capa 3 -->
+      <text x="10" y="190" class="svg-sub">PROCESO</text>
+      <rect class="svg-box" x="10" y="198" width="160" height="56" rx="8"/><text class="svg-title" x="90" y="223" text-anchor="middle">validator</text><text class="svg-sub" x="90" y="241" text-anchor="middle">reglas del modelo</text>
+      <rect class="svg-box" x="180" y="198" width="160" height="56" rx="8"/><text class="svg-title" x="260" y="223" text-anchor="middle">xml + twig</text><text class="svg-sub" x="260" y="241" text-anchor="middle">plantillas UBL</text>
+      <rect class="svg-box" x="350" y="198" width="160" height="56" rx="8"/><text class="svg-title" x="430" y="223" text-anchor="middle">xmldsig</text><text class="svg-sub" x="430" y="241" text-anchor="middle">firma, PKCS#12</text>
+      <rect class="svg-box" x="520" y="198" width="160" height="56" rx="8"/><text class="svg-title" x="600" y="223" text-anchor="middle">cpe-validator</text><text class="svg-sub" x="600" y="241" text-anchor="middle">XSL de SUNAT</text>
+      <rect class="svg-box" x="690" y="198" width="160" height="56" rx="8"/><text class="svg-title" x="770" y="223" text-anchor="middle">xcodes</text><text class="svg-sub" x="770" y="241" text-anchor="middle">códigos de error</text>
+      <!-- capa 4 -->
+      <text x="10" y="278" class="svg-sub">COMUNICACIÓN</text>
+      <rect class="svg-box" x="10" y="286" width="270" height="56" rx="8"/><text class="svg-title" x="145" y="311" text-anchor="middle">ws</text><text class="svg-sub" x="145" y="329" text-anchor="middle">SOAP, ZIP, CDR, API REST GRE</text>
+      <rect class="svg-box" x="295" y="286" width="270" height="56" rx="8"/><text class="svg-title" x="430" y="311" text-anchor="middle">consulta-cpe</text><text class="svg-sub" x="430" y="329" text-anchor="middle">validez de comprobantes (REST)</text>
+      <rect class="svg-box" x="580" y="286" width="270" height="56" rx="8"/><text class="svg-title" x="715" y="311" text-anchor="middle">report + htmltopdf</text><text class="svg-sub" x="715" y="329" text-anchor="middle">HTML, tickets, PDF, QR</text>
+      <!-- fachada -->
+      <rect class="svg-box ok" x="10" y="370" width="840" height="56" rx="8"/><text class="svg-title" x="430" y="395" text-anchor="middle">lite — fachadas See (SOAP) y Api (guías)</text><text class="svg-sub" x="430" y="413" text-anchor="middle">lo que usas en el día a día: une generación, firma y envío</text>
+      <text x="430" y="455" text-anchor="middle" class="svg-sub">data: documentos de ejemplo para pruebas</text>
+    </svg>
+  </div>
+
+  <h2>Equivalencia con Greenter</h2>
+  <table>
+    <thead><tr><th>Greenter (PHP)</th><th>Este módulo</th><th>Notas</th></tr></thead>
+    <tbody>
+      <tr><td><code>greenter/core</code></td><td><code>core</code></td><td>Mismos modelos y métodos</td></tr>
+      <tr><td><code>greenter/xml</code></td><td><code>xml</code></td><td>Usa las plantillas Twig originales sin cambios (motor Twig propio)</td></tr>
+      <tr><td><code>greenter/xmldsig</code></td><td><code>xmldsig</code></td><td>Lector PKCS#12 propio sobre <code>node:crypto</code></td></tr>
+      <tr><td><code>greenter/ws</code>, <code>greenter/gre-api</code></td><td><code>ws</code></td><td>Cliente SOAP y REST propios</td></tr>
+      <tr><td><code>greenter/lite</code></td><td><code>lite</code></td><td><code>See</code> y <code>Api</code></td></tr>
+      <tr><td><code>greenter/xml-parser</code></td><td><code>xml-parser</code></td><td></td></tr>
+      <tr><td><code>greenter/validator</code></td><td><code>validator</code></td><td>Reglas Symfony portadas</td></tr>
+      <tr><td><code>greenter/cpe-validator</code></td><td><code>cpe-validator</code></td><td>XSL con <code>saxon-js</code> (opcional)</td></tr>
+      <tr><td><code>greenter/xcodes</code></td><td><code>xcodes</code></td><td></td></tr>
+      <tr><td><code>greenter/report</code>, <code>greenter/htmltopdf</code></td><td><code>report</code>, <code>htmltopdf</code></td><td>+ tickets y A5</td></tr>
+      <tr><td><code>greenter/consulta-cpe</code></td><td><code>consulta-cpe</code></td><td>+ respaldo SOAP</td></tr>
+      <tr><td><code>greenter/data</code></td><td><code>data</code></td><td></td></tr>
+      <tr><td>—</td><td><code>calc</code>, <code>mapper</code></td><td>Nuevos</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Migrar código de Greenter</h3>
+  <div class="tabs">
+    <div class="tab-panel" data-tab="PHP (Greenter)">
+<pre><code class="no-hl">$see = new See();
+$see->setService(SunatEndpoints::FE_BETA);
+$see->setCertificate(file_get_contents('certificate.pem'));
+$see->setClaveSOL('20123456789', 'MODDATOS', 'moddatos');
+
+$invoice = (new Invoice())
+    ->setSerie('F001')
+    ->setCorrelativo('1')
+    ->setFechaEmision(new DateTime());
+
+$result = $see->send($invoice);
+if ($result->isSuccess()) {
+    echo $result->getCdrResponse()->getDescription();
+}</code></pre>
+    </div>
+    <div class="tab-panel" data-tab="Node.js (este módulo)">
+<pre><code>const see = new See();
+see.setService(SunatEndpoints.FE_BETA);
+see.setCertificate(fs.readFileSync('certificate.pem', 'utf8'));
+see.setClaveSOL('20123456789', 'MODDATOS', 'moddatos');
+
+const invoice = new Invoice()
+  .setSerie('F001')
+  .setCorrelativo('1')
+  .setFechaEmision(new Date());
+
+const result = await see.send(invoice);        // ← await
+if (result.isSuccess()) {
+  console.log(result.getCdrResponse().getDescription());
+}</code></pre>
+    </div>
+  </div>
+  <p>Diferencias: <code>-&gt;</code> pasa a <code>.</code>, <code>::</code> a <code>.</code>, <code>DateTime</code> a
+    <code>Date</code>, y las operaciones de red llevan <code>await</code>. <code>getCdrZip()</code> devuelve un
+    <code>Buffer</code>.</p>
+
+  <h2>Qué pasa dentro de <code>see.send()</code></h2>
+  <div class="diagram" data-seq="FeFactory elige el generador XML según la clase del documento|TwigBuilder renderiza la plantilla UBL (invoice2.1.xml.twig)|SignedXml firma el XML (RSA-SHA1, C14N) e inserta ds:Signature|ZipFly comprime el XML en un ZIP con el nombre RUC-TIPO-SERIE-NUMERO|SoapClient lo envía con WS-Security (usuario SOL)|DomCdrReader descomprime y lee el CDR: código, descripción y notas">
+    <svg viewBox="0 0 860 140" role="img" aria-label="Pasos internos de send">
+      <g class="seq-step" data-step="0"><rect class="svg-box" x="5" y="30" width="130" height="64" rx="8"/><text class="svg-title" x="70" y="58" text-anchor="middle">FeFactory</text><text class="svg-sub" x="70" y="76" text-anchor="middle">elige builder</text></g>
+      <g class="seq-step" data-step="1"><rect class="svg-box" x="148" y="30" width="130" height="64" rx="8"/><text class="svg-title" x="213" y="58" text-anchor="middle">TwigBuilder</text><text class="svg-sub" x="213" y="76" text-anchor="middle">XML UBL</text></g>
+      <g class="seq-step" data-step="2"><rect class="svg-box" x="291" y="30" width="130" height="64" rx="8"/><text class="svg-title" x="356" y="58" text-anchor="middle">SignedXml</text><text class="svg-sub" x="356" y="76" text-anchor="middle">firma</text></g>
+      <g class="seq-step" data-step="3"><rect class="svg-box" x="434" y="30" width="130" height="64" rx="8"/><text class="svg-title" x="499" y="58" text-anchor="middle">ZipFly</text><text class="svg-sub" x="499" y="76" text-anchor="middle">ZIP</text></g>
+      <g class="seq-step" data-step="4"><rect class="svg-box primary" x="577" y="30" width="130" height="64" rx="8"/><text class="svg-title" x="642" y="58" text-anchor="middle">SoapClient</text><text class="svg-sub" x="642" y="76" text-anchor="middle">sendBill</text></g>
+      <g class="seq-step" data-step="5"><rect class="svg-box ok" x="720" y="30" width="135" height="64" rx="8"/><text class="svg-title" x="787" y="58" text-anchor="middle">DomCdrReader</text><text class="svg-sub" x="787" y="76" text-anchor="middle">CDR</text></g>
+    </svg>
+    <div class="caption seq-label"></div>
+    <div class="controls"></div>
+  </div>
+
+  <h2>Dependencias</h2>
+  <table>
+    <tbody>
+      <tr><td><code>@xmldom/xmldom</code>, <code>xpath</code></td><td>Lectura de XML (CDR, parsers)</td></tr>
+      <tr><td><code>xml-crypto</code></td><td>Firma digital XMLDSig</td></tr>
+      <tr><td><code>qrcode</code></td><td>Códigos QR</td></tr>
+      <tr><td><code>saxon-js</code> (opcional)</td><td>Validación XSL</td></tr>
+    </tbody>
+  </table>
+  <p>El cliente SOAP, el ZIP, el lector PKCS#12 y el motor de plantillas son propios, para mantener pocas dependencias.</p>
+
+  <h2>Desarrollo del módulo</h2>
+  <pre><code class="no-hl">npm install
+npm test                    # pruebas unitarias
+SUNAT_BETA=1 npm test       # + pruebas contra SUNAT beta
+npm version minor && git push --follow-tags && npm publish</code></pre>
+</main>
+<script src="assets/app.js"></script>
+</body>
+</html>

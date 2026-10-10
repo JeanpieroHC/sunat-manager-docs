@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Instalación · sunat-manager</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<main>
+  <h1>📦 Instalación</h1>
+  <p class="lead">El paquete es <strong>privado</strong>: se publica en GitHub Packages y solo pueden instalarlo las
+    personas autorizadas. La configuración se hace una sola vez por computadora.</p>
+
+  <h2>Requisitos</h2>
+  <ul>
+    <li><strong>Node.js 18 o superior</strong> (usa <code>fetch</code> nativo y módulos ES: <code>import</code>).</li>
+    <li>Una <strong>cuenta de GitHub con acceso de lectura</strong> al paquete <code>@jeanpierohc/sunat-manager</code>.</li>
+    <li>Para emitir en producción: <strong>certificado digital</strong> y <strong>usuario SOL secundario</strong>. Para
+      probar en beta no necesitas nada de SUNAT.</li>
+  </ul>
+
+  <h2>Pasos</h2>
+  <ol class="steps">
+    <li>
+      <h4>Pide acceso al paquete</h4>
+      <p>El dueño entra a <em>github.com/users/JeanpieroHC/packages/npm/package/sunat-manager</em> →
+        <strong>Package settings</strong> → <strong>Manage access</strong> → <strong>Invite</strong>, y te asigna el rol
+        <strong>Read</strong>. No necesitas acceso al código fuente.</p>
+    </li>
+    <li>
+      <h4>Crea un token de GitHub</h4>
+      <p>En <a href="https://github.com/settings/tokens">github.com/settings/tokens</a> → <em>Generate new token
+        (classic)</em> → marca solo <code>read:packages</code>. Los tokens <em>fine-grained</em> no sirven para paquetes.</p>
+      <p>Guárdalo como variable de entorno (no lo escribas dentro del proyecto):</p>
+      <div class="tabs">
+        <div class="tab-panel" data-tab="Windows (PowerShell)"><pre><code class="no-hl">setx GITHUB_TOKEN "ghp_tuToken..."
+# cierra y vuelve a abrir la terminal</code></pre></div>
+        <div class="tab-panel" data-tab="Linux / macOS"><pre><code class="no-hl">echo 'export GITHUB_TOKEN="ghp_tuToken..."' >> ~/.bashrc
+source ~/.bashrc</code></pre></div>
+        <div class="tab-panel" data-tab="Servidor / CI"><pre><code class="no-hl"># Define GITHUB_TOKEN como secreto del entorno (GitHub Actions, Docker, etc.)
+# En GitHub Actions del mismo dueño puedes usar ${{ secrets.GITHUB_TOKEN }}</code></pre></div>
+      </div>
+    </li>
+    <li>
+      <h4>Crea un archivo <code>.npmrc</code> en tu proyecto</h4>
+      <pre data-title=".npmrc"><code class="no-hl">@jeanpierohc:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}</code></pre>
+      <p>Este archivo sí puede subirse a tu repositorio: no contiene el token, solo la referencia a la variable.</p>
+    </li>
+    <li>
+      <h4>Instala</h4>
+      <pre><code class="no-hl">npm install @jeanpierohc/sunat-manager</code></pre>
+    </li>
+    <li>
+      <h4>Verifica</h4>
+      <pre data-title="prueba.mjs"><code>import { montoEnLetras } from '@jeanpierohc/sunat-manager';
+console.log(montoEnLetras(1180.5));
+// SON MIL CIENTO OCHENTA CON 50/100 SOLES</code></pre>
+      <pre><code class="no-hl">node prueba.mjs</code></pre>
+    </li>
+  </ol>
+
+  <div class="callout warn"><span class="ci">⚠️</span><div><p><strong>Tu proyecto debe usar módulos ES.</strong> Agrega
+    <code>"type": "module"</code> a tu <code>package.json</code> o usa archivos <code>.mjs</code>. Desde CommonJS puedes
+    usar <code>const lib = await import('@jeanpierohc/sunat-manager')</code>.</p></div></div>
+
+  <h2>Importar solo lo que necesitas</h2>
+  <p>Todo se exporta desde la raíz, pero también puedes importar cada módulo por separado:</p>
+  <table>
+    <thead><tr><th>Ruta</th><th>Contenido</th></tr></thead>
+    <tbody>
+      <tr><td><code>@jeanpierohc/sunat-manager</code></td><td>Todo (clases principales en la raíz)</td></tr>
+      <tr><td><code>…/core</code></td><td>Modelos: Invoice, Note, Despatch, Summary, Company, Client…</td></tr>
+      <tr><td><code>…/lite</code></td><td>Fachadas <code>See</code> (SOAP) y <code>Api</code> (guías)</td></tr>
+      <tr><td><code>…/mapper</code></td><td><code>DocumentMapper</code> (JSON → comprobante)</td></tr>
+      <tr><td><code>…/calc</code></td><td><code>SaleCalculator</code>, <code>montoEnLetras</code>, <code>LegendGenerator</code></td></tr>
+      <tr><td><code>…/xml</code></td><td>Generadores de XML UBL</td></tr>
+      <tr><td><code>…/xmldsig</code></td><td>Firma digital y certificados</td></tr>
+      <tr><td><code>…/ws</code></td><td>Servicios SOAP y API REST de SUNAT</td></tr>
+      <tr><td><code>…/consulta-cpe</code></td><td>Consulta de validez de comprobantes</td></tr>
+      <tr><td><code>…/report</code>, <code>…/htmltopdf</code></td><td>Representación impresa HTML / PDF</td></tr>
+      <tr><td><code>…/validator</code>, <code>…/cpe-validator</code></td><td>Validación de documentos</td></tr>
+      <tr><td><code>…/xml-parser</code></td><td>Leer XML existentes</td></tr>
+      <tr><td><code>…/xcodes</code></td><td>Catálogo de códigos de error de SUNAT</td></tr>
+      <tr><td><code>…/data</code></td><td>Documentos de ejemplo</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Dependencias opcionales</h2>
+  <table>
+    <thead><tr><th>Para…</th><th>Instala</th></tr></thead>
+    <tbody>
+      <tr><td>Validar con las reglas XSL oficiales de SUNAT</td><td><code>npm install saxon-js</code></td></tr>
+      <tr><td>Generar PDF con wkhtmltopdf</td><td>El programa <a href="https://wkhtmltopdf.org/downloads.html">wkhtmltopdf</a></td></tr>
+      <tr><td>Generar PDF con Chrome</td><td><code>npm install puppeteer</code> (ver <a href="impresion.html">PDF y tickets</a>)</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Actualizar</h2>
+  <pre><code class="no-hl">npm update @jeanpierohc/sunat-manager
+npm view @jeanpierohc/sunat-manager versions   # versiones publicadas</code></pre>
+
+  <h2>Problemas comunes</h2>
+  <details><summary><code>npm ERR! 401 Unauthorized</code> o <code>403 Forbidden</code></summary>
+    <p>El token no existe, venció, no tiene <code>read:packages</code>, o tu cuenta no tiene acceso al paquete. Verifica con
+      <code>echo %GITHUB_TOKEN%</code> (Windows) o <code>echo $GITHUB_TOKEN</code>.</p></details>
+  <details><summary><code>npm ERR! 404 Not Found</code></summary>
+    <p>Falta el archivo <code>.npmrc</code> o la línea <code>@jeanpierohc:registry=…</code>: npm está buscando en el registro público.</p></details>
+  <details><summary><code>SyntaxError: Cannot use import statement outside a module</code></summary>
+    <p>Agrega <code>"type": "module"</code> a tu <code>package.json</code> o renombra el archivo a <code>.mjs</code>.</p></details>
+</main>
+<script src="assets/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guías de remisión · sunat-manager</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<main>
+  <h1>🚚 Guías de remisión electrónicas (GRE)</h1>
+  <p class="lead">Desde 2022 las guías se envían por una <strong>API REST</strong> de SUNAT (no por SOAP como las
+    facturas). La fachada <code>Api</code> se encarga del token OAuth2, el envío y la consulta del ticket.</p>
+
+  <h2>Credenciales necesarias</h2>
+  <p>Además del certificado y la clave SOL, necesitas <strong>credenciales de API</strong>: en SUNAT Operaciones en Línea →
+    <em>Empresa → Credenciales de API SUNAT</em> registras una aplicación y obtienes un <code>client_id</code> y un
+    <code>client_secret</code>.</p>
+
+  <div class="diagram" data-seq="1. Api pide un token con client_id, client_secret y clave SOL|2. SUNAT entrega un token (válido ~1 hora; se reutiliza solo)|3. Se envía la guía firmada y comprimida|4. SUNAT responde con un número de ticket|5. Se consulta el ticket hasta que esté procesado|6. SUNAT devuelve el CDR">
+    <svg viewBox="0 0 760 330" role="img" aria-label="Flujo de envío de guías">
+      <rect class="svg-box accent" x="60" y="10" width="160" height="44" rx="8"/><text class="svg-title" x="140" y="37" text-anchor="middle">Tu sistema (Api)</text>
+      <rect class="svg-box primary" x="540" y="10" width="160" height="44" rx="8"/><text class="svg-title" x="620" y="37" text-anchor="middle">API SUNAT</text>
+      <line x1="140" y1="54" x2="140" y2="320" class="svg-line" stroke-dasharray="4 4"/>
+      <line x1="620" y1="54" x2="620" y2="320" class="svg-line" stroke-dasharray="4 4"/>
+      <defs><marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--fg-muted)"/></marker></defs>
+      <g class="seq-step" data-step="0"><line x1="140" y1="90" x2="612" y2="90" stroke="var(--accent)" stroke-width="2" marker-end="url(#a3)"/><text x="380" y="84" text-anchor="middle" class="seq-msg">POST /oauth2/token (client_id, secret, usuario SOL)</text></g>
+      <g class="seq-step" data-step="1"><line x1="612" y1="130" x2="148" y2="130" stroke="var(--ok)" stroke-width="2" marker-end="url(#a3)"/><text x="380" y="124" text-anchor="middle" class="seq-msg">access_token 🔑</text></g>
+      <g class="seq-step" data-step="2"><line x1="140" y1="175" x2="612" y2="175" stroke="var(--accent)" stroke-width="2" marker-end="url(#a3)"/><text x="380" y="169" text-anchor="middle" class="seq-msg">POST /comprobantes/{archivo} (ZIP en base64 + hash)</text></g>
+      <g class="seq-step" data-step="3"><line x1="612" y1="215" x2="148" y2="215" stroke="var(--fg-muted)" stroke-width="2" marker-end="url(#a3)"/><text x="380" y="209" text-anchor="middle" class="seq-msg">numTicket 🎫</text></g>
+      <g class="seq-step" data-step="4"><line x1="140" y1="260" x2="612" y2="260" stroke="var(--accent)" stroke-width="2" marker-end="url(#a3)"/><text x="380" y="254" text-anchor="middle" class="seq-msg">GET /comprobantes/envios/{ticket}</text></g>
+      <g class="seq-step" data-step="5"><line x1="612" y1="300" x2="148" y2="300" stroke="var(--ok)" stroke-width="2" marker-end="url(#a3)"/><text x="380" y="294" text-anchor="middle" class="seq-msg">CDR ✅ (código 0)</text></g>
+    </svg>
+    <div class="caption seq-label"></div>
+    <div class="controls"></div>
+  </div>
+
+  <h2>Ejemplo completo</h2>
+  <pre data-title="guia.js"><code>import fs from 'node:fs';
+import { Api, DocumentMapper } from '@jeanpierohc/sunat-manager';
+
+const api = new Api();   // producción por defecto. Pruebas: new Api({ auth: 'https://…', cpe: 'https://…' })
+api.setApiCredentials(process.env.SUNAT_CLIENT_ID, process.env.SUNAT_CLIENT_SECRET)
+   .setClaveSOL('20123456789', 'USUARIOSOL', 'claveSol')
+   .setCertificate(fs.readFileSync('certificado.pem', 'utf8'));
+
+const mapper = new DocumentMapper({ company: { ruc: '20123456789', razon_social: 'MI EMPRESA S.A.C.',
+  ubigeo: '150101', departamento: 'LIMA', provincia: 'LIMA', distrito: 'LIMA', direccion: 'AV. LIMA 123' } });
+
+const guia = mapper.despatch({
+  serie: 'T001', correlativo: 1,
+  destinatario: { tipo_documento: '6', numero_documento: '20000000002', razon_social: 'DESTINO S.A.C.' },
+  cod_traslado: '01',            // 01 venta, 04 entre establecimientos… (catálogo 20)
+  mod_traslado: '02',            // 01 transporte público, 02 privado (catálogo 18)
+  fec_traslado: '2024-01-16',
+  peso_total: 12.5, und_peso_total: 'KGM', num_bultos: 2,
+  partida: { ubigeo: '150101', direccion: 'AV. LIMA 123' },
+  llegada: { ubigeo: '150203', direccion: 'AV. ARRIBA 456' },
+  conductor: { tipo_doc: '1', num_doc: '44556677', licencia: 'Q44556677', nombres: 'JUAN', apellidos: 'PÉREZ' },
+  vehiculo_placa: 'ABC123',
+  detalles: [{ codigo: 'P001', descripcion: 'PRODUCTO', cantidad: 2, unidad: 'NIU' }],
+});
+
+const res = await api.send(guia);
+if (!res.isSuccess()) throw new Error(res.getError().getMessage());
+
+// consultar el ticket hasta que SUNAT termine de procesar
+let status;
+do {
+  await new Promise((r) => setTimeout(r, 2000));
+  status = await api.getStatus(res.getTicket());
+} while (status.getCode() === '98');           // 98 = en proceso
+
+console.log(status.isSuccess() ? status.getCdrResponse().getDescription() : status.getError().getMessage());</code></pre>
+
+  <h2>Transporte público vs privado</h2>
+  <div class="tabs">
+    <div class="tab-panel" data-tab="Privado (mod_traslado 02)">
+      <p>Usas tus propios vehículos: se informan <strong>conductor(es)</strong> y <strong>placa(s)</strong>.</p>
+<pre><code>{
+  mod_traslado: '02',
+  conductores: [
+    { num_doc: '44556677', licencia: 'Q44556677', nombres: 'JUAN', apellidos: 'PÉREZ' },   // Principal
+    { num_doc: '11223344', licencia: 'Q11223344', nombres: 'ANA', apellidos: 'RAMOS' },    // Secundario
+  ],
+  vehiculo_placa: 'ABC123',
+  vehiculos_secundarios: [{ placa: 'XYZ999' }],     // carreta, remolque…
+}</code></pre>
+    </div>
+    <div class="tab-panel" data-tab="Público (mod_traslado 01)">
+      <p>Contratas una empresa de transporte: se informa el <strong>transportista</strong>.</p>
+<pre><code>{
+  mod_traslado: '01',
+  transportista: { tipo_doc: '6', num_doc: '20999999999', razon_social: 'TRANSPORTES S.A.C.', nro_mtc: 'MTC123' },
+}</code></pre>
+    </div>
+    <div class="tab-panel" data-tab="Entre establecimientos (04)">
+      <p>Traslado entre locales de la misma empresa: el RUC del emisor se coloca automáticamente en partida y llegada;
+        indica el código de cada local.</p>
+<pre><code>{
+  cod_traslado: '04',
+  partida: { ubigeo: '150101', direccion: 'ALMACÉN CENTRAL', cod_local: '0001' },
+  llegada: { ubigeo: '150203', direccion: 'TIENDA NORTE', cod_local: '0002' },
+}</code></pre>
+    </div>
+  </div>
+
+  <h2>Campos de la guía</h2>
+  <table>
+    <thead><tr><th>Campo</th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr><td><code>serie</code>, <code>correlativo</code>, <code>fecha_emision</code></td><td>Numeración y fecha</td></tr>
+      <tr><td><code>tipo_documento</code></td><td><code>09</code> remitente (defecto) o <code>31</code> transportista</td></tr>
+      <tr><td><code>version</code></td><td><code>2022</code> (defecto, formato vigente)</td></tr>
+      <tr><td><code>destinatario</code></td><td>Mismo formato que el cliente</td></tr>
+      <tr><td><code>cod_traslado</code>, <code>des_traslado</code></td><td>Motivo (catálogo 20)</td></tr>
+      <tr><td><code>mod_traslado</code></td><td>Modalidad (catálogo 18)</td></tr>
+      <tr><td><code>fec_traslado</code></td><td>Fecha de inicio del traslado</td></tr>
+      <tr><td><code>peso_total</code>, <code>und_peso_total</code> (KGM), <code>num_bultos</code></td><td>Peso y bultos</td></tr>
+      <tr><td><code>partida</code>, <code>llegada</code></td><td><code>{ ubigeo, direccion, ruc?, cod_local? }</code> (o <code>partida_ubigeo</code>, <code>partida_direccion</code>…)</td></tr>
+      <tr><td><code>conductor</code> / <code>conductores</code></td><td><code>{ tipo_doc, num_doc, licencia, nombres, apellidos, tipo? }</code></td></tr>
+      <tr><td><code>vehiculo_placa</code>, <code>vehiculos_secundarios</code></td><td>Placas</td></tr>
+      <tr><td><code>transportista</code></td><td><code>{ tipo_doc, num_doc, razon_social, nro_mtc }</code></td></tr>
+      <tr><td><code>indicadores</code></td><td>Ej. <code>['SUNAT_Envio_IndicadorTrasladoVehiculoM1L']</code></td></tr>
+      <tr><td><code>documentos_relacionados</code></td><td><code>[{ tipo, tipo_desc, nro, emisor }]</code></td></tr>
+      <tr><td><code>observaciones</code></td><td>Texto libre</td></tr>
+      <tr><td><code>detalles</code></td><td><code>[{ codigo, descripcion, cantidad, unidad, codigo_sunat? }]</code></td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout info"><span class="ci">💡</span><div><p>El token se guarda en memoria y se reutiliza hasta 10 minutos
+    antes de vencer. Si tienes varios procesos, puedes pasar tu propio almacén (Redis, base de datos) a
+    <code>ApiFactory</code>.</p></div></div>
+</main>
+<script src="assets/app.js"></script>
+</body>
+</html>

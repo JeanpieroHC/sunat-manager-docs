@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Comprobantes desde JSON · sunat-manager</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<main>
+  <h1>🧾 Comprobantes desde JSON</h1>
+  <p class="lead"><code>DocumentMapper</code> convierte un objeto JSON simple (claves en español, <code>snake_case</code>) en
+    el modelo que la librería envía a SUNAT. Es ideal cuando la venta llega desde tu frontend, otra API o la base de datos.</p>
+
+  <div class="diagram">
+    <svg viewBox="0 0 820 170" role="img" aria-label="JSON a comprobante">
+      <rect class="svg-box accent" x="10" y="20" width="220" height="130" rx="10"/>
+      <text x="24" y="46" font-family="monospace" font-size="12" fill="var(--fg)">{</text>
+      <text x="34" y="64" font-family="monospace" font-size="12" fill="var(--fg)">"serie": "F001",</text>
+      <text x="34" y="82" font-family="monospace" font-size="12" fill="var(--fg)">"client": {…},</text>
+      <text x="34" y="100" font-family="monospace" font-size="12" fill="var(--fg)">"detalles": [ … ]</text>
+      <text x="24" y="118" font-family="monospace" font-size="12" fill="var(--fg)">}</text>
+      <text x="120" y="142" text-anchor="middle" class="svg-sub">tu JSON</text>
+      <path class="svg-line svg-dash" d="M230 85 H300"/>
+      <rect class="svg-box primary" x="300" y="45" width="200" height="80" rx="10"/>
+      <text class="svg-title" x="400" y="80" text-anchor="middle">DocumentMapper</text>
+      <text class="svg-sub" x="400" y="100" text-anchor="middle">+ SaleCalculator</text>
+      <path class="svg-line svg-dash" d="M500 85 H570"/>
+      <rect class="svg-box ok" x="570" y="20" width="240" height="130" rx="10"/>
+      <text class="svg-title" x="690" y="50" text-anchor="middle">Invoice listo para enviar</text>
+      <text class="svg-sub" x="690" y="74" text-anchor="middle">✔ IGV y totales</text>
+      <text class="svg-sub" x="690" y="92" text-anchor="middle">✔ leyenda en letras</text>
+      <text class="svg-sub" x="690" y="110" text-anchor="middle">✔ cuotas y detracción</text>
+      <text class="svg-sub" x="690" y="128" text-anchor="middle">✔ valores por defecto</text>
+    </svg>
+  </div>
+
+  <h2>Uso básico</h2>
+  <pre><code>import { DocumentMapper } from '@jeanpierohc/sunat-manager';
+
+const mapper = new DocumentMapper({
+  company: { ruc: '20123456789', razon_social: 'MI EMPRESA S.A.C.', ubigeo: '150101',
+             departamento: 'LIMA', provincia: 'LIMA', distrito: 'LIMA', direccion: 'AV. LIMA 123' },
+  // calcular: 'auto' (por defecto) | true | false
+  // calculator: { igv: 18, icbper: 0.5 }
+});
+
+const factura = mapper.invoice(req.body);   // también: boleta, creditNote, debitNote, summary, voided, despatch, retention
+const doc = mapper.create(req.body);        // elige según tipo_documento (01, 03, 07, 08, 09, 20) o "tipo"</code></pre>
+
+  <h3>¿Cuándo calcula?</h3>
+  <table>
+    <thead><tr><th>Opción <code>calcular</code></th><th>Comportamiento</th></tr></thead>
+    <tbody>
+      <tr><td><code>'auto'</code> (defecto)</td><td>Si el JSON <strong>no</strong> trae <code>mto_imp_venta</code>, calcula todo. Si lo trae, usa tus montos tal cual.</td></tr>
+      <tr><td><code>true</code></td><td>Siempre recalcula (ignora los montos que envíes, excepto los de entrada de cada ítem).</td></tr>
+      <tr><td><code>false</code></td><td>Nunca calcula; solo agrega la leyenda del monto en letras si falta.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Empresa (emisor)</h2>
+  <p>Se pasa una vez en <code>new DocumentMapper({ company })</code>, o por documento en el campo <code>company</code>
+    (útil si manejas varias empresas). También acepta un objeto <code>Company</code> ya construido.</p>
+  <table>
+    <thead><tr><th>Campo</th><th>Requerido</th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr><td><code>ruc</code></td><td>✔</td><td>RUC del emisor</td></tr>
+      <tr><td><code>razon_social</code></td><td>✔</td><td>Razón social</td></tr>
+      <tr><td><code>nombre_comercial</code></td><td></td><td>Por defecto, la razón social</td></tr>
+      <tr><td><code>ubigeo</code>, <code>departamento</code>, <code>provincia</code>, <code>distrito</code>, <code>direccion</code></td><td>✔</td><td>Domicilio fiscal (ubigeo INEI de 6 dígitos)</td></tr>
+      <tr><td><code>urbanizacion</code></td><td></td><td>Por defecto <code>-</code></td></tr>
+      <tr><td><code>cod_local</code></td><td></td><td>Código de establecimiento anexo, por defecto <code>0000</code></td></tr>
+      <tr><td><code>email</code>, <code>telefono</code></td><td></td><td>Contacto</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Cliente</h2>
+  <table>
+    <thead><tr><th>Campo</th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr><td><code>tipo_documento</code></td><td><code>6</code> RUC, <code>1</code> DNI, <code>4</code> carnet de extranjería, <code>7</code> pasaporte, <code>0</code> sin documento / no domiciliado</td></tr>
+      <tr><td><code>numero_documento</code></td><td>Número de documento (<code>-</code> si no tiene)</td></tr>
+      <tr><td><code>razon_social</code></td><td>Nombre o razón social</td></tr>
+      <tr><td><code>direccion</code>, <code>ubigeo</code></td><td>Opcional</td></tr>
+      <tr><td><code>email</code>, <code>telefono</code></td><td>Opcional</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Factura y boleta</h2>
+  <div class="tabs">
+    <div class="tab-panel" data-tab="Ejemplo completo">
+<pre><code>mapper.invoice({
+  tipo_documento: '01',            // '03' o usa mapper.boleta(...)
+  serie: 'F001', correlativo: 123,
+  fecha_emision: '2024-01-15',     // por defecto: ahora (hora de Lima)
+  fecha_vencimiento: '2024-02-15',
+  moneda: 'PEN',                   // 'USD'…
+  tipo_operacion: '0101',          // venta interna (catálogo 51)
+  client: { tipo_documento: '6', numero_documento: '20000000001', razon_social: 'CLIENTE S.A.C.' },
+
+  forma_pago_tipo: 'Credito',      // 'Contado' por defecto
+  cuotas: [                        // sin monto: se reparte el saldo
+    { fecha_pago: '2024-02-15', monto: 500 },
+    { fecha_pago: '2024-03-15' },
+  ],
+
+  detalles: [
+    { codigo: 'P001', descripcion: 'PRODUCTO', unidad: 'NIU', cantidad: 2, mto_valor_unitario: 500 },
+  ],
+
+  observacion: 'Entregar en almacén',
+  orden_compra: 'OC-2024-001',
+  guias: [{ tipo_doc: '09', nro_doc: 'T001-1' }],
+});</code></pre>
+    </div>
+    <div class="tab-panel" data-tab="Con detracción">
+<pre><code>mapper.invoice({
+  serie: 'F001', correlativo: 124, client,
+  tipo_operacion: '1001',          // operación sujeta a detracción
+  detraccion: {
+    codigo_bien_servicio: '037',   // catálogo 54
+    codigo_medio_pago: '001',      // depósito en cuenta (defecto)
+    cuenta_banco: '00-000-123456', // Banco de la Nación
+    porcentaje: 12,                // el monto se calcula
+  },
+  detalles: [{ descripcion: 'SERVICIO DE MANTENIMIENTO', unidad: 'ZZ', cantidad: 1, mto_valor_unitario: 1000 }],
+});</code></pre>
+    </div>
+    <div class="tab-panel" data-tab="Con percepción">
+<pre><code>mapper.invoice({
+  serie: 'F001', correlativo: 125, client,
+  tipo_operacion: '2001',          // operación sujeta a percepción
+  percepcion: { cod_regimen: '51', tasa: 2 },  // 2% venta interna
+  detalles: [{ descripcion: 'COMBUSTIBLE', cantidad: 10, mto_valor_unitario: 15 }],
+});</code></pre>
+    </div>
+    <div class="tab-panel" data-tab="Montos manuales">
+<pre><code>// Si envías mto_imp_venta, se usan tus montos sin recalcular
+mapper.boleta({
+  serie: 'B001', correlativo: 1, client,
+  mto_oper_gravadas: 100, mto_igv: 18, total_impuestos: 18,
+  valor_venta: 100, sub_total: 118, mto_imp_venta: 118,
+  detalles: [{
+    descripcion: 'X', cantidad: 1, mto_valor_unitario: 100, mto_valor_venta: 100,
+    mto_base_igv: 100, porcentaje_igv: 18, igv: 18, total_impuestos: 18, mto_precio_unitario: 118,
+  }],
+});</code></pre>
+    </div>
+  </div>
+
+  <h3>Campos del comprobante</h3>
+  <table>
+    <thead><tr><th>Campo</th><th>Defecto</th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr><td><code>serie</code>, <code>correlativo</code></td><td>—</td><td>Numeración</td></tr>
+      <tr><td><code>fecha_emision</code></td><td>ahora</td><td><code>YYYY-MM-DD</code>, ISO con hora, o <code>Date</code>. Se interpreta en hora de Lima.</td></tr>
+      <tr><td><code>fecha_vencimiento</code></td><td>—</td><td>Fecha de vencimiento</td></tr>
+      <tr><td><code>moneda</code></td><td><code>PEN</code></td><td>Código ISO 4217</td></tr>
+      <tr><td><code>tipo_operacion</code></td><td><code>0101</code></td><td>Catálogo 51: <code>0101</code> venta interna, <code>0200</code> exportación, <code>1001</code> detracción, <code>2001</code> percepción</td></tr>
+      <tr><td><code>forma_pago_tipo</code></td><td><code>Contado</code></td><td><code>Contado</code> o <code>Credito</code></td></tr>
+      <tr><td><code>cuotas</code> / <code>forma_pago_cuotas</code></td><td>—</td><td><code>[{ fecha_pago, monto?, moneda? }]</code></td></tr>
+      <tr><td><code>descuentos</code></td><td>—</td><td>Globales: <code>[{ cod_tipo: '02', factor: 0.05 }]</code> o <code>{ cod_tipo: '03', monto: 5 }</code></td></tr>
+      <tr><td><code>cargos</code></td><td>—</td><td>Globales: <code>[{ cod_tipo: '50', monto: 10 }]</code></td></tr>
+      <tr><td><code>anticipos</code></td><td>—</td><td><code>[{ nro_doc_rel: 'F001-10', total: 118, tipo_doc_rel: '02' }]</code></td></tr>
+      <tr><td><code>redondeo</code></td><td>—</td><td>Ajuste por redondeo (positivo o negativo)</td></tr>
+      <tr><td><code>detraccion</code></td><td>—</td><td><code>{ codigo_bien_servicio, cuenta_banco, porcentaje, codigo_medio_pago?, monto? }</code></td></tr>
+      <tr><td><code>percepcion</code></td><td>—</td><td><code>{ cod_regimen, tasa, monto_base?, monto?, monto_total? }</code></td></tr>
+      <tr><td><code>retencion</code></td><td>—</td><td><code>{ tasa, monto_base, monto }</code> (cargo de retención del IGV, código 62)</td></tr>
+      <tr><td><code>guias</code></td><td>—</td><td><code>[{ tipo_doc, nro_doc }]</code></td></tr>
+      <tr><td><code>observacion</code>, <code>orden_compra</code></td><td>—</td><td>Datos adicionales</td></tr>
+      <tr><td><code>leyendas</code></td><td>automáticas</td><td><code>[{ code, value }]</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3>Campos de cada ítem (<code>detalles</code>)</h3>
+  <table>
+    <thead><tr><th>Campo</th><th>Defecto</th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr><td><code>descripcion</code></td><td>—</td><td>Descripción del producto o servicio</td></tr>
+      <tr><td><code>cantidad</code></td><td>—</td><td>Admite decimales</td></tr>
+      <tr><td><code>mto_valor_unitario</code></td><td>—</td><td>Precio <strong>sin</strong> impuestos…</td></tr>
+      <tr><td><code>mto_precio_unitario</code></td><td>—</td><td>…o precio <strong>con</strong> impuestos (se respeta el precio informado)</td></tr>
+      <tr><td><code>tip_afe_igv</code></td><td><code>10</code></td><td>Tipo de afectación (catálogo 07)</td></tr>
+      <tr><td><code>unidad</code></td><td><code>NIU</code></td><td>Unidad (catálogo 03): <code>NIU</code> unidad, <code>ZZ</code> servicio, <code>KGM</code> kilo…</td></tr>
+      <tr><td><code>codigo</code>, <code>codigo_sunat</code>, <code>codigo_gs1</code></td><td>—</td><td>Códigos del producto</td></tr>
+      <tr><td><code>mto_valor_gratuito</code></td><td>—</td><td>Valor referencial de ítems gratuitos</td></tr>
+      <tr><td><code>porcentaje_igv</code></td><td>18 / 4 / 0</td><td>Según la afectación</td></tr>
+      <tr><td><code>tip_sis_isc</code> + <code>porcentaje_isc</code></td><td>—</td><td>ISC: sistema (<code>01</code> al valor) y tasa</td></tr>
+      <tr><td><code>icbper</code></td><td>—</td><td><code>true</code> para bolsas plásticas (S/ 0.50 c/u). <code>factor_icbper</code> para otro monto.</td></tr>
+      <tr><td><code>descuentos</code>, <code>cargos</code></td><td>—</td><td>Del ítem: <code>[{ cod_tipo: '00', factor: 0.1 }]</code></td></tr>
+    </tbody>
+  </table>
+
+  <h2>Notas de crédito y débito</h2>
+  <pre><code>mapper.creditNote({                // o debitNote / note con tipo_documento '07' | '08'
+  serie: 'FC01', correlativo: 1, client,
+  tipo_doc_afectado: '01',         // factura
+  num_doc_afectado: 'F001-123',
+  cod_motivo: '07',                // catálogo 09 (crédito) / 10 (débito)
+  des_motivo: 'DEVOLUCIÓN POR ÍTEM',
+  detalles: [{ descripcion: 'PRODUCTO DEVUELTO', cantidad: 1, mto_valor_unitario: 500 }],
+});</code></pre>
+
+  <h2>Resumen diario y comunicación de baja</h2>
+  <pre><code>mapper.summary({
+  correlativo: '001',
+  fecha_referencia: '2024-01-15',  // fecha de las boletas (alias: fecha_resumen)
+  fecha_emision: '2024-01-16',     // fecha del resumen (alias: fecha_generacion)
+  detalles: [{
+    tipo_documento: '03', serie_numero: 'B001-15', estado: '1',   // 1 adicionar, 2 modificar, 3 anular
+    cliente_tipo: '1', cliente_numero: '12345678',
+    total: 118, mto_oper_gravadas: 100, mto_igv: 18,
+  }],
+});
+
+mapper.voided({
+  correlativo: '001',
+  fecha_referencia: '2024-01-15',  // fecha de los comprobantes a anular
+  fecha_emision: '2024-01-16',
+  detalles: [{ tipo_documento: '01', serie: 'F001', correlativo: 123, motivo: 'ERROR EN EL RUC' }],
+});</code></pre>
+
+  <h2>Guía de remisión y retención</h2>
+  <p>Ver <a href="guias-remision.html">Guías de remisión</a> y <a href="documentos.html#retencion">Retenciones</a> para la lista de campos.</p>
+
+  <h2>Usarlo en una API REST</h2>
+  <pre data-title="servidor.js (Express)"><code>import express from 'express';
+import fs from 'node:fs';
+import { See, SunatEndpoints, DocumentMapper } from '@jeanpierohc/sunat-manager';
+
+const app = express();
+app.use(express.json());
+
+const mapper = new DocumentMapper({ company: JSON.parse(fs.readFileSync('empresa.json', 'utf8')) });
+const see = new See();
+see.setService(SunatEndpoints.FE_BETA);
+see.setCertificate(fs.readFileSync('certificado.pem', 'utf8'));
+see.setClaveSOL('20123456789', 'MODDATOS', 'moddatos');
+
+app.post('/comprobantes', async (req, res) => {
+  try {
+    const doc = mapper.create(req.body);
+    const result = await see.send(doc);
+    if (!result.isSuccess()) {
+      return res.status(422).json({ error: result.getError().getCode(), mensaje: result.getError().getMessage() });
+    }
+    const cdr = result.getCdrResponse();
+    res.json({
+      nombre: doc.getName(),
+      total: doc.getMtoImpVenta(),
+      codigo: cdr.getCode(),
+      descripcion: cdr.getDescription(),
+      observaciones: cdr.getNotes(),
+      xml: see.getFactory().getLastXml(),
+      cdr: result.getCdrZip().toString('base64'),
+    });
+  } catch (e) {
+    res.status(400).json({ error: e.message });   // datos inválidos
+  }
+});
+
+app.listen(3000);</code></pre>
+  <div class="callout info"><span class="ci">💡</span><div><p>Las claves aceptadas son las mismas que usaba el proyecto Laravel
+    <code>/API</code>, así que puedes reutilizar sus colecciones de Postman.</p></div></div>
+</main>
+<script src="assets/app.js"></script>
+</body>
+</html>

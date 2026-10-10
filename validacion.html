@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Validar y leer XML · sunat-manager</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<main>
+  <h1>✅ Validar y leer XML</h1>
+  <p class="lead">Detectar errores <strong>antes</strong> de enviar ahorra correlativos rechazados. La librería tiene dos
+    niveles de validación, además de herramientas para leer XML existentes.</p>
+
+  <div class="diagram">
+    <svg viewBox="0 0 780 150" role="img" aria-label="Niveles de validación">
+      <rect class="svg-box accent" x="10" y="45" width="140" height="56" rx="8"/><text class="svg-title" x="80" y="70" text-anchor="middle">Invoice</text><text class="svg-sub" x="80" y="88" text-anchor="middle">modelo</text>
+      <path class="svg-line svg-dash" d="M150 73 H200"/>
+      <rect class="svg-box" x="200" y="35" width="170" height="76" rx="8"/><text class="svg-title" x="285" y="62" text-anchor="middle">1. SymfonyValidator</text><text class="svg-sub" x="285" y="80" text-anchor="middle">campos obligatorios,</text><text class="svg-sub" x="285" y="96" text-anchor="middle">formatos, longitudes</text>
+      <path class="svg-line svg-dash" d="M370 73 H420"/>
+      <rect class="svg-box" x="420" y="45" width="120" height="56" rx="8"/><text class="svg-title" x="480" y="70" text-anchor="middle">XML firmado</text><text class="svg-sub" x="480" y="88" text-anchor="middle">UBL 2.1</text>
+      <path class="svg-line svg-dash" d="M540 73 H590"/>
+      <rect class="svg-box primary" x="590" y="35" width="180" height="76" rx="8"/><text class="svg-title" x="680" y="62" text-anchor="middle">2. CpeValidator</text><text class="svg-sub" x="680" y="80" text-anchor="middle">reglas XSL oficiales</text><text class="svg-sub" x="680" y="96" text-anchor="middle">de SUNAT</text>
+    </svg>
+  </div>
+
+  <h2>1. Validar el modelo</h2>
+  <p>Revisa campos obligatorios, formatos (RUC, series, códigos de catálogo) y estructura, igual que Greenter:</p>
+  <pre><code>import { SymfonyValidator, XmlErrorCodeProvider } from '@jeanpierohc/sunat-manager';
+
+const validator = new SymfonyValidator(new XmlErrorCodeProvider());
+validator.setVersion('2.1');
+
+const errores = [...validator.validate(factura)];
+if (errores.length) {
+  for (const e of errores) console.log(e.getPropertyPath(), '→', e.getMessage());
+  // company.ruc → This value is not valid.
+  // details[0].unidad → This value should not be blank.
+}</code></pre>
+  <p>Los mensajes son los de Symfony Validator (en inglés); <code>getPropertyPath()</code> indica exactamente qué campo
+    revisar.</p>
+
+  <h2>2. Validar el XML con las reglas de SUNAT</h2>
+  <p>SUNAT publica sus reglas de validación como hojas <strong>XSL</strong>. Con ellas obtienes el mismo código de error
+    que daría SUNAT, sin enviar nada. Requiere el paquete opcional <code>saxon-js</code> y las hojas XSL oficiales
+    (descárgalas del portal de SUNAT y ordénalas en carpetas <code>1.X</code> / <code>2.X</code>):</p>
+  <pre><code class="no-hl">npm install saxon-js</code></pre>
+  <pre><code>import { CpeValidator } from '@jeanpierohc/sunat-manager';
+
+const validator = CpeValidator.create('./xsl');            // carpeta con 1.X y 2.X
+const errores = validator.validateFromXml(`${factura.getName()}.xml`, xmlFirmado);
+
+for (const e of errores) {
+  console.log(e.getCode(), e.getMessage(), e.getLevel() === '2' ? '(observación)' : '(error)');
+}</code></pre>
+
+  <h2>Mensajes de error de SUNAT en español</h2>
+  <p><code>XmlErrorCodeProvider</code> contiene el catálogo oficial (más de 1 700 códigos):</p>
+  <pre><code>import { XmlErrorCodeProvider } from '@jeanpierohc/sunat-manager';
+
+const codes = new XmlErrorCodeProvider();
+codes.getValue('2017');   // 'El numero de documento de identidad del receptor debe ser  RUC'
+codes.getAll();           // Map con los 1 710 códigos
+
+see.setCodeProvider(codes);   // los errores de see.send() traen el mensaje en español</code></pre>
+
+  <h2>Leer XML existentes</h2>
+  <p>Convierte un XML (tuyo o de un proveedor) de vuelta en modelo, para mostrarlo, reimprimirlo o registrarlo:</p>
+  <pre><code>import fs from 'node:fs';
+import { InvoiceParser, HtmlReport } from '@jeanpierohc/sunat-manager';
+
+const factura = new InvoiceParser().parse(fs.readFileSync('20000000001-01-F001-15.xml'));
+factura.getClient().getRznSocial();
+factura.getMtoImpVenta();
+factura.getDetails().map((d) => d.getDescripcion());
+
+// reimprimir
+const html = new HtmlReport().render(factura, { system: { hash: '...' } });</code></pre>
+  <table>
+    <thead><tr><th>Parser</th><th>Documento</th></tr></thead>
+    <tbody>
+      <tr><td><code>InvoiceParser</code></td><td>Facturas y boletas (UBL 2.0 y 2.1)</td></tr>
+      <tr><td><code>NoteParser</code></td><td>Notas de crédito y débito</td></tr>
+      <tr><td><code>DespatchParser</code></td><td>Guías de remisión</td></tr>
+      <tr><td><code>SummaryParser</code>, <code>VoidedParser</code></td><td>Resúmenes y bajas</td></tr>
+      <tr><td><code>RetentionParser</code>, <code>PerceptionParser</code></td><td>Retenciones y percepciones</td></tr>
+      <tr><td><code>ReceiptParser</code></td><td>Recibos por honorarios</td></tr>
+    </tbody>
+  </table>
+  <p>Para obtener solo el hash (resumen) de un XML firmado: <code>new XmlUtils().getHashSign(xml)</code>.</p>
+</main>
+<script src="assets/app.js"></script>
+</body>
+</html>

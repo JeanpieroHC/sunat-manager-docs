@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cálculo de impuestos · sunat-manager</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<main>
+  <h1>🧮 Cálculo de impuestos y totales</h1>
+  <p class="lead">SUNAT rechaza un comprobante si sus montos no cuadran al céntimo. <code>SaleCalculator</code> hace esos
+    cálculos por ti: indicas cantidades y precios, y completa el IGV, los totales y las leyendas.</p>
+
+  <h2>Pruébalo aquí</h2>
+  <p>Cambia cantidades, precios y tipos de afectación y mira cómo se recalcula todo. Abajo verás el JSON que enviarías a
+    <code>DocumentMapper</code> para obtener el mismo resultado.</p>
+  <div class="playground" id="playground"></div>
+  <div class="callout info"><span class="ci">ℹ️</span><div><p>Esta calculadora es una demostración simplificada que corre
+    en tu navegador. La librería además maneja ISC, descuentos, cargos, anticipos, percepción, detracción y cuotas.</p></div></div>
+
+  <h2>Cómo se forma el total</h2>
+  <div class="diagram">
+    <svg viewBox="0 0 820 230" role="img" aria-label="Composición del total">
+      <text x="10" y="24" class="svg-title">Ejemplo: 2 × S/ 59.00 (con IGV) + 1 libro inafecto S/ 45.00 + 1 bolsa S/ 0.62 (con IGV e ICBPER)</text>
+      <g>
+        <rect x="10" y="50" width="400" height="44" fill="var(--accent-soft)" stroke="var(--accent)"/><text x="210" y="77" text-anchor="middle" class="svg-title">Op. gravadas 100.10</text>
+        <rect x="410" y="50" width="72" height="44" fill="var(--warn-soft)" stroke="var(--warn)"/><text x="446" y="77" text-anchor="middle" class="svg-title">IGV 18.02</text>
+        <rect x="482" y="50" width="180" height="44" fill="var(--ok-soft)" stroke="var(--ok)"/><text x="572" y="77" text-anchor="middle" class="svg-title">Op. inafectas 45.00</text>
+        <rect x="662" y="50" width="40" height="44" fill="var(--primary-soft)" stroke="var(--primary)"/><text x="682" y="77" text-anchor="middle" class="svg-sub">0.50</text>
+      </g>
+      <path d="M10 104 V114 H702 V104" class="svg-line"/>
+      <text x="356" y="134" text-anchor="middle" class="svg-title">TOTAL = valor de venta + IGV + ICBPER = S/ 163.62</text>
+      <text x="10" y="170" class="svg-sub">• Valor de venta = suma de ítems sin impuestos (gravados + exonerados + inafectos + exportación).</text>
+      <text x="10" y="190" class="svg-sub">• IGV = 18% solo de los ítems gravados (más su ISC, si tienen).</text>
+      <text x="10" y="210" class="svg-sub">• Los ítems gratuitos no suman al total; se informan aparte como "operaciones gratuitas".</text>
+    </svg>
+  </div>
+
+  <h2>Uso directo de SaleCalculator</h2>
+  <p>Si construyes los modelos tú mismo (sin JSON), usa la calculadora así:</p>
+  <pre><code>import { Invoice, SaleDetail, SaleCalculator } from '@jeanpierohc/sunat-manager';
+
+const invoice = new Invoice()
+  .setTipoMoneda('PEN')
+  .setDetails([
+    new SaleDetail().setDescripcion('PRODUCTO').setUnidad('NIU').setCantidad(2).setMtoValorUnitario(50),
+    new SaleDetail().setDescripcion('BOLSA').setUnidad('NIU').setCantidad(1).setMtoValorUnitario(0.1).setIcbper(true),
+  ]);
+
+new SaleCalculator().calculate(invoice);
+invoice.getMtoOperGravadas(); // 100.10
+invoice.getMtoIGV();          // 18.02
+invoice.getIcbper();          // 0.50
+invoice.getMtoImpVenta();     // 118.62
+invoice.getLegends()[0].getValue(); // SON CIENTO DIECIOCHO CON 62/100 SOLES</code></pre>
+  <table>
+    <thead><tr><th>Opción</th><th>Defecto</th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr><td><code>igv</code></td><td><code>18</code></td><td>Porcentaje de IGV</td></tr>
+      <tr><td><code>ivap</code></td><td><code>4</code></td><td>Porcentaje de IVAP</td></tr>
+      <tr><td><code>icbper</code></td><td><code>0.5</code></td><td>Impuesto por bolsa plástica</td></tr>
+      <tr><td><code>legends</code></td><td><code>true</code></td><td>Generar leyendas automáticamente</td></tr>
+      <tr><td><code>legendOptions</code></td><td>—</td><td><code>{ prefix: 'SON', currencyName: 'SOLES' }</code></td></tr>
+    </tbody>
+  </table>
+
+  <h2>Casos soportados</h2>
+  <p>Todos estos casos se enviaron a SUNAT beta y fueron <span class="badge ok">aceptados sin observaciones</span>.</p>
+
+  <h3>Gravado, exonerado, inafecto y gratuito</h3>
+  <pre><code>detalles: [
+  { descripcion: 'GRAVADO',    cantidad: 2, mto_valor_unitario: 50 },                    // IGV 18%
+  { descripcion: 'EXONERADO',  cantidad: 1, mto_valor_unitario: 20, tip_afe_igv: '20' },
+  { descripcion: 'INAFECTO',   cantidad: 1, mto_valor_unitario: 15, tip_afe_igv: '30' },
+  { descripcion: 'BONIFICACIÓN', cantidad: 2, mto_valor_gratuito: 10, tip_afe_igv: '13' }, // IGV referencial, no se cobra
+]
+// gravadas 100 · exoneradas 20 · inafectas 15 · gratuitas 20 · IGV 18 · TOTAL 153.00
+// + leyenda 1002 "TRANSFERENCIA GRATUITA…"</code></pre>
+
+  <h3>Precio con IGV incluido</h3>
+  <p>Muy común en tiendas: el precio de etiqueta ya incluye IGV. Usa <code>mto_precio_unitario</code>; el valor sin IGV se
+    obtiene dividiendo entre 1.18 y el precio que informaste se respeta.</p>
+  <pre><code>{ descripcion: 'GASEOSA', cantidad: 7, mto_precio_unitario: 12.90 }
+// valor unitario 10.9322… · valor venta 76.53 · IGV 13.78 · total 90.31</code></pre>
+
+  <h3>ISC e ICBPER</h3>
+  <pre><code>{ descripcion: 'LICOR', cantidad: 2, mto_valor_unitario: 100, tip_sis_isc: '01', porcentaje_isc: 20 },
+// ISC = 200 × 20% = 40 · base IGV = 200 + 40 = 240 · IGV = 43.20
+{ descripcion: 'BOLSA', cantidad: 3, mto_valor_unitario: 0.10, icbper: true },
+// ICBPER = 3 × 0.50 = 1.50</code></pre>
+  <div class="callout warn"><span class="ci">⚠️</span><div><p>Para ICBPER marca el ítem con <code>icbper: true</code>
+    (o <code>setIcbper(true)</code>). El modelo hereda de greenter un factor por defecto de 0.30, que se ignora.</p></div></div>
+
+  <h3>Descuentos, cargos y redondeo</h3>
+  <table>
+    <thead><tr><th>Código (cat. 53)</th><th>Nivel</th><th>Efecto</th></tr></thead>
+    <tbody>
+      <tr><td><code>00</code></td><td>Ítem</td><td>Descuento que reduce la base imponible del ítem</td></tr>
+      <tr><td><code>01</code></td><td>Ítem</td><td>Descuento que no afecta la base</td></tr>
+      <tr><td><code>02</code></td><td>Global</td><td>Descuento que reduce la base (se recalcula el IGV)</td></tr>
+      <tr><td><code>03</code></td><td>Global</td><td>Descuento que no afecta la base (se resta del total)</td></tr>
+      <tr><td><code>04</code></td><td>Global</td><td>Anticipo (se genera solo al informar <code>anticipos</code>)</td></tr>
+      <tr><td><code>47</code> / <code>48</code></td><td>Ítem</td><td>Cargo que afecta / no afecta la base</td></tr>
+      <tr><td><code>49</code> / <code>50</code></td><td>Global</td><td>Cargo que afecta / no afecta la base</td></tr>
+    </tbody>
+  </table>
+  <pre><code>mapper.invoice({
+  ...,
+  redondeo: -0.03,
+  descuentos: [{ cod_tipo: '02', factor: 0.05 }, { cod_tipo: '03', monto: 5 }],
+  detalles: [
+    { descripcion: 'A', cantidad: 2, mto_valor_unitario: 100, descuentos: [{ cod_tipo: '00', factor: 0.1 }] },
+    { descripcion: 'B', cantidad: 1, mto_valor_unitario: 50.5 },
+  ],
+});
+// ítem A: 200 − 10% = 180 · gravadas 230.50 − 5% = 218.97 · IGV 39.41
+// total = 258.38 − 5.00 (desc. 03) − 0.03 (redondeo) = 253.35</code></pre>
+
+  <h3>Exportación e IVAP</h3>
+  <pre><code>mapper.invoice({ tipo_operacion: '0200', client: { tipo_documento: '0', numero_documento: '-', razon_social: 'FOREIGN CO' },
+  detalles: [{ descripcion: 'CAFÉ', cantidad: 10, mto_valor_unitario: 25, tip_afe_igv: '40' }] });   // total 250, sin IGV
+
+mapper.invoice({ detalles: [{ descripcion: 'ARROZ PILADO', cantidad: 10, mto_valor_unitario: 3.5, tip_afe_igv: '17' }] });
+// IVAP 4% = 1.40 · total 36.40 · leyenda 2007. Una factura con IVAP solo puede tener ítems IVAP.</code></pre>
+
+  <h3>Crédito, cuotas y detracción</h3>
+  <pre><code>mapper.invoice({
+  tipo_operacion: '1001', forma_pago_tipo: 'Credito',
+  detraccion: { codigo_bien_servicio: '037', cuenta_banco: '00-123', porcentaje: 12 },
+  cuotas: [{ fecha_pago: '2024-02-15', monto: 500 }, { fecha_pago: '2024-03-15' }, { fecha_pago: '2024-04-15' }],
+  detalles: [{ descripcion: 'SERVICIO', unidad: 'ZZ', cantidad: 1, mto_valor_unitario: 1000 }],
+});
+// total 1180 · detracción 12% = 141.60 · pendiente de pago 1038.40
+// cuotas: 500 + 269.20 + 269.20 (el saldo se reparte entre las cuotas sin monto)</code></pre>
+
+  <h3>Anticipos</h3>
+  <p>Cuando el cliente pagó un adelanto con otra factura, informa el anticipo; se genera el descuento <code>04</code>
+    y el IGV se calcula sobre la diferencia:</p>
+  <pre><code>mapper.invoice({ anticipos: [{ nro_doc_rel: 'F001-10', total: 50 }],
+  detalles: [{ descripcion: 'SALDO', cantidad: 1, mto_valor_unitario: 200 }] });
+// valor de venta 200 · base IGV 157.63 · IGV 28.37 · total 236 − anticipo 50 = 186</code></pre>
+
+  <h3>Percepción</h3>
+  <pre><code>mapper.invoice({ tipo_operacion: '2001', percepcion: { cod_regimen: '51', tasa: 2 }, detalles: [...] });
+// total 177 → percepción 2% = 3.54 → total a cobrar 180.54</code></pre>
+
+  <h2>Monto en letras</h2>
+  <p>La leyenda 1000 ("SON … CON xx/100 SOLES") es obligatoria. Pruébalo:</p>
+  <div class="playground" id="monto-letras">
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:10px">
+      <div><label>Monto</label><input type="number" value="21180.50" step="0.01" min="0"></div>
+      <div><label>Moneda</label><select><option>PEN</option><option>USD</option><option>EUR</option></select></div>
+    </div>
+    <div class="legend-box" style="margin-top:10px"></div>
+  </div>
+  <pre><code>import { montoEnLetras } from '@jeanpierohc/sunat-manager';
+montoEnLetras(21180.5);                      // SON VEINTIÚN MIL CIENTO OCHENTA CON 50/100 SOLES
+montoEnLetras(1000000, 'USD');               // SON UN MILLÓN CON 00/100 DÓLARES AMERICANOS
+montoEnLetras(15, 'PEN', { prefix: '' });    // QUINCE CON 00/100 SOLES</code></pre>
+
+  <h2>Leyendas automáticas</h2>
+  <table>
+    <thead><tr><th>Código</th><th>Texto</th><th>Se agrega cuando…</th></tr></thead>
+    <tbody>
+      <tr><td><code>1000</code></td><td>SON … CON xx/100 SOLES</td><td>Siempre</td></tr>
+      <tr><td><code>1002</code></td><td>TRANSFERENCIA GRATUITA DE UN BIEN Y/O SERVICIO PRESTADO GRATUITAMENTE</td><td>Hay ítems gratuitos</td></tr>
+      <tr><td><code>2000</code></td><td>COMPROBANTE DE PERCEPCIÓN</td><td>Hay percepción</td></tr>
+      <tr><td><code>2006</code></td><td>Operación sujeta a detracción</td><td>Hay detracción</td></tr>
+      <tr><td><code>2007</code></td><td>Operación sujeta al IVAP</td><td>Hay ítems IVAP</td></tr>
+    </tbody>
+  </table>
+</main>
+<script src="assets/app.js"></script>
+<script src="assets/playground.js"></script>
+</body>
+</html>

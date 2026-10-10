@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>sunat-manager · Facturación electrónica SUNAT para Node.js</title>
+<meta name="description" content="Documentación de @jeanpierohc/sunat-manager: emite facturas, boletas, notas, guías y más a SUNAT desde Node.js.">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<main>
+  <section class="hero">
+    <h1>Facturación electrónica <span class="hl">SUNAT</span> desde Node.js</h1>
+    <p class="lead"><code>@jeanpierohc/sunat-manager</code> es una librería que hace todo el trabajo pesado de la facturación
+      electrónica en Perú: arma el XML oficial, lo firma con tu certificado digital, lo envía a SUNAT, interpreta la
+      respuesta y genera el PDF o ticket para tu cliente.</p>
+    <div class="btns">
+      <a class="btn primary" href="tutorial.html">🚀 Emitir mi primera factura</a>
+      <a class="btn" href="conceptos.html">📚 Soy nuevo en facturación electrónica</a>
+      <a class="btn" href="instalacion.html">📦 Instalar</a>
+    </div>
+  </section>
+
+  <h2 id="como-funciona">¿Cómo funciona?</h2>
+  <p>Tu aplicación solo describe la venta (cliente, productos, cantidades y precios). La librería se encarga del resto.
+    Observa el recorrido de un comprobante:</p>
+
+  <div class="diagram">
+    <svg viewBox="0 0 980 300" role="img" aria-label="Flujo de emisión de un comprobante">
+      <defs>
+        <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor" style="color: var(--fg-muted)"/>
+        </marker>
+      </defs>
+      <!-- fila 1 -->
+      <g>
+        <rect class="svg-box accent" x="10" y="20" width="150" height="70" rx="10"/>
+        <text class="svg-title" x="85" y="50" text-anchor="middle">🧑‍💻 Tu aplicación</text>
+        <text class="svg-sub" x="85" y="70" text-anchor="middle">JSON de la venta</text>
+      </g>
+      <g>
+        <rect class="svg-box" x="210" y="20" width="150" height="70" rx="10"/>
+        <text class="svg-title" x="285" y="50" text-anchor="middle">🧮 Cálculo</text>
+        <text class="svg-sub" x="285" y="70" text-anchor="middle">IGV, totales, letras</text>
+      </g>
+      <g>
+        <rect class="svg-box" x="410" y="20" width="150" height="70" rx="10"/>
+        <text class="svg-title" x="485" y="50" text-anchor="middle">📄 XML UBL 2.1</text>
+        <text class="svg-sub" x="485" y="70" text-anchor="middle">formato oficial</text>
+      </g>
+      <g>
+        <rect class="svg-box" x="610" y="20" width="150" height="70" rx="10"/>
+        <text class="svg-title" x="685" y="50" text-anchor="middle">🔐 Firma digital</text>
+        <text class="svg-sub" x="685" y="70" text-anchor="middle">con tu certificado</text>
+      </g>
+      <g>
+        <rect class="svg-box primary" x="810" y="20" width="150" height="70" rx="10"/>
+        <text class="svg-title" x="885" y="50" text-anchor="middle">🏛️ SUNAT</text>
+        <text class="svg-sub" x="885" y="70" text-anchor="middle">valida el comprobante</text>
+      </g>
+      <!-- fila 2 -->
+      <g>
+        <rect class="svg-box ok" x="810" y="200" width="150" height="70" rx="10"/>
+        <text class="svg-title" x="885" y="230" text-anchor="middle">📬 CDR</text>
+        <text class="svg-sub" x="885" y="250" text-anchor="middle">constancia de recepción</text>
+      </g>
+      <g>
+        <rect class="svg-box" x="510" y="200" width="150" height="70" rx="10"/>
+        <text class="svg-title" x="585" y="230" text-anchor="middle">✅ Resultado</text>
+        <text class="svg-sub" x="585" y="250" text-anchor="middle">aceptado / rechazado</text>
+      </g>
+      <g>
+        <rect class="svg-box accent" x="210" y="200" width="150" height="70" rx="10"/>
+        <text class="svg-title" x="285" y="230" text-anchor="middle">🖨️ PDF / ticket</text>
+        <text class="svg-sub" x="285" y="250" text-anchor="middle">para tu cliente</text>
+      </g>
+      <!-- conexiones -->
+      <path id="flow" class="svg-line svg-dash" d="M160 55 H210 M360 55 H410 M560 55 H610 M760 55 H810" marker-end="url(#arr)"/>
+      <path class="svg-line svg-dash" d="M885 90 V200" marker-end="url(#arr)"/>
+      <path class="svg-line svg-dash" d="M810 235 H660" marker-end="url(#arr)"/>
+      <path class="svg-line svg-dash" d="M510 235 H360" marker-end="url(#arr)"/>
+      <!-- documento viajando -->
+      <path id="trip" d="M85 55 H885 V235 H285" fill="none" stroke="none"/>
+      <g>
+        <rect x="-11" y="-14" width="22" height="28" rx="3" fill="var(--bg)" stroke="var(--primary)" stroke-width="2"/>
+        <line x1="-6" y1="-6" x2="6" y2="-6" stroke="var(--primary)" stroke-width="2"/>
+        <line x1="-6" y1="0" x2="6" y2="0" stroke="var(--primary)" stroke-width="2"/>
+        <line x1="-6" y1="6" x2="2" y2="6" stroke="var(--primary)" stroke-width="2"/>
+        <animateMotion dur="9s" repeatCount="indefinite" keyPoints="0;0.127;0.127;0.253;0.253;0.38;0.38;0.506;0.506;0.62;0.62;0.81;0.81;1;1" keyTimes="0;0.07;0.12;0.19;0.24;0.31;0.36;0.43;0.5;0.56;0.62;0.7;0.76;0.86;1" calcMode="linear">
+          <mpath href="#trip"/>
+        </animateMotion>
+      </g>
+    </svg>
+    <div class="caption">El documento recorre todo el proceso en milisegundos. Tú solo escribes el paso 1.</div>
+  </div>
+
+  <h2 id="en-30-segundos">En 30 segundos</h2>
+  <pre data-title="factura.js"><code>import fs from 'node:fs';
+import { See, SunatEndpoints, DocumentMapper } from '@jeanpierohc/sunat-manager';
+
+// 1. Tus datos de empresa (una sola vez)
+const mapper = new DocumentMapper({
+  company: { ruc: '20123456789', razon_social: 'MI EMPRESA S.A.C.', ubigeo: '150101',
+             departamento: 'LIMA', provincia: 'LIMA', distrito: 'LIMA', direccion: 'AV. LIMA 123' },
+});
+
+// 2. La venta: los impuestos y totales se calculan solos
+const factura = mapper.invoice({
+  serie: 'F001', correlativo: 1,
+  client: { tipo_documento: '6', numero_documento: '20000000001', razon_social: 'CLIENTE S.A.C.' },
+  detalles: [{ descripcion: 'LAPTOP', cantidad: 1, mto_precio_unitario: 2360 }],
+});
+
+// 3. Enviar a SUNAT
+const see = new See();
+see.setService(SunatEndpoints.FE_BETA);                         // entorno de pruebas
+see.setCertificate(fs.readFileSync('certificado.pem', 'utf8'));
+see.setClaveSOL('20123456789', 'MODDATOS', 'moddatos');
+
+const result = await see.send(factura);
+console.log(result.getCdrResponse().getDescription());
+// → "La Factura numero F001-1, ha sido aceptada"</code></pre>
+
+  <h2 id="que-puedes-hacer">¿Qué puedes hacer?</h2>
+  <div class="cards">
+    <a class="card" href="documentos.html"><div class="ci">🧾</div><h4>Emitir todos los comprobantes</h4><p>Facturas, boletas, notas de crédito/débito, resúmenes diarios, bajas, retenciones y percepciones.</p></a>
+    <a class="card" href="calculos.html"><div class="ci">🧮</div><h4>Calcular impuestos solo</h4><p>IGV, ISC, ICBPER, IVAP, gratuitas, exportación, descuentos, anticipos, detracción y cuotas.</p></a>
+    <a class="card" href="json.html"><div class="ci">🧩</div><h4>Crear desde JSON</h4><p>Recibe la venta de tu API o frontend como JSON y conviértela en comprobante con una línea.</p></a>
+    <a class="card" href="guias-remision.html"><div class="ci">🚚</div><h4>Guías de remisión</h4><p>Envío por la nueva API REST de SUNAT (GRE 2022), con token automático.</p></a>
+    <a class="card" href="impresion.html"><div class="ci">🖨️</div><h4>PDF y tickets</h4><p>Representación impresa en A4, A5 o ticket de 80/58/50 mm, con código QR.</p></a>
+    <a class="card" href="consultas.html"><div class="ci">🔎</div><h4>Consultar comprobantes</h4><p>Verifica si un comprobante es válido y recupera CDRs.</p></a>
+    <a class="card" href="validacion.html"><div class="ci">✅</div><h4>Validar antes de enviar</h4><p>Detecta errores antes de que SUNAT los rechace y lee XML existentes.</p></a>
+    <a class="card" href="certificados.html"><div class="ci">🔐</div><h4>Certificados</h4><p>Convierte tu .pfx/.p12 a PEM y firma documentos.</p></a>
+  </div>
+
+  <h2 id="por-donde-empiezo">¿Por dónde empiezo?</h2>
+  <table>
+    <thead><tr><th>Si tú…</th><th>Lee primero</th></tr></thead>
+    <tbody>
+      <tr><td>No sabes qué es un CDR, una serie o el UBL</td><td><a href="conceptos.html">Conceptos SUNAT</a> — explicado desde cero</td></tr>
+      <tr><td>Quieres ver algo funcionando ya</td><td><a href="tutorial.html">Tutorial: primera factura</a> (10 minutos)</td></tr>
+      <tr><td>Tienes una API que recibe ventas en JSON</td><td><a href="json.html">Comprobantes desde JSON</a></td></tr>
+      <tr><td>Venías usando Greenter en PHP</td><td><a href="arquitectura.html">Arquitectura</a> (equivalencia de paquetes)</td></tr>
+      <tr><td>SUNAT te rechazó un comprobante</td><td><a href="errores.html">Errores y FAQ</a></td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout info"><span class="ci">ℹ️</span><div>
+    <p><strong>Basado en Greenter.</strong> Esta librería es un port completo de
+      <a href="https://github.com/thegreenter/greenter">Greenter</a> (PHP) a Node.js, con las mismas clases y métodos,
+      más funciones nuevas: cálculo automático, comprobantes desde JSON, tickets y consulta de validez.</p>
+  </div></div>
+</main>
+<script src="assets/app.js"></script>
+</body>
+</html>

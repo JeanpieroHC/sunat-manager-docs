@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PDF y tickets · sunat-manager</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<main>
+  <h1>🖨️ Representación impresa: PDF y tickets</h1>
+  <p class="lead">La representación impresa es lo que entregas al cliente. La librería genera el <strong>HTML</strong> con
+    código QR, hash de la firma y todos los datos; luego lo conviertes a <strong>PDF</strong> o lo mandas a una ticketera.</p>
+
+  <h2>Formatos disponibles</h2>
+  <p>Haz clic en una imagen para verla completa. Son capturas reales generadas por la librería.</p>
+  <div class="gallery">
+    <figure><img src="img/factura-a4.png" alt="Factura A4" loading="lazy"><figcaption><strong>A4</strong> · factura (plantilla original de Greenter)</figcaption></figure>
+    <figure><img src="img/factura-a5.png" alt="Factura A5" loading="lazy"><figcaption><strong>A5</strong> · media hoja</figcaption></figure>
+    <figure><img src="img/factura-80mm.png" alt="Ticket 80mm" loading="lazy"><figcaption><strong>Ticket 80 mm</strong> · factura a crédito</figcaption></figure>
+    <figure><img src="img/boleta-58mm.png" alt="Ticket 58mm" loading="lazy"><figcaption><strong>Ticket 58 mm</strong> · boleta</figcaption></figure>
+    <figure><img src="img/guia-80mm.png" alt="Guía 80mm" loading="lazy"><figcaption><strong>Ticket 80 mm</strong> · guía de remisión</figcaption></figure>
+    <figure><img src="img/guia-a4.png" alt="Guía A4" loading="lazy"><figcaption><strong>A4</strong> · guía de remisión</figcaption></figure>
+  </div>
+  <table>
+    <thead><tr><th>Formato</th><th>Valor</th><th>Documentos</th></tr></thead>
+    <tbody>
+      <tr><td>A4</td><td><code>'A4'</code> (defecto)</td><td>Todos</td></tr>
+      <tr><td>A5</td><td><code>'A5'</code></td><td>Facturas, boletas, notas, guías, retenciones, percepciones</td></tr>
+      <tr><td>Ticket 80 mm</td><td><code>'80mm'</code> o <code>'ticket'</code></td><td>Facturas, boletas, notas, guías</td></tr>
+      <tr><td>Ticket 58 mm</td><td><code>'58mm'</code></td><td>Facturas, boletas, notas, guías</td></tr>
+      <tr><td>Ticket 50 mm</td><td><code>'50mm'</code></td><td>Facturas, boletas, notas, guías</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Generar el HTML</h2>
+  <pre><code>import fs from 'node:fs';
+import { HtmlReport, DefaultTemplateResolver, XmlUtils } from '@jeanpierohc/sunat-manager';
+
+const report = new HtmlReport();
+report.setTemplate(new DefaultTemplateResolver().getTemplate(factura, '80mm'));
+
+const html = report.render(factura, {
+  system: {
+    logo: fs.readFileSync('logo.png'),               // opcional (PNG/JPG)
+    hash: new XmlUtils().getHashSign(xmlFirmado),     // resumen de la firma
+  },
+  user: {
+    header: 'Telf: (01) 555-1234 · ventas@mitienda.pe',   // HTML permitido
+    footer: 'Gracias por su compra',
+    extras: [{ name: 'Vendedor', value: 'ANA' }, { name: 'Condición', value: 'Contado' }],
+  },
+});</code></pre>
+  <p>El <code>xmlFirmado</code> lo obtienes con <code>see.getFactory().getLastXml()</code> después de enviar, o con
+    <code>see.getXmlSigned(doc)</code>.</p>
+
+  <h3>Parámetros</h3>
+  <table>
+    <thead><tr><th>Parámetro</th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr><td><code>system.logo</code></td><td>Buffer de la imagen del logo</td></tr>
+      <tr><td><code>system.hash</code></td><td>Valor resumen (DigestValue) de la firma</td></tr>
+      <tr><td><code>system.qr</code></td><td>Guías: URL o texto del QR que devuelve SUNAT en el CDR</td></tr>
+      <tr><td><code>user.header</code></td><td>HTML bajo los datos de la empresa</td></tr>
+      <tr><td><code>user.footer</code></td><td>HTML al pie</td></tr>
+      <tr><td><code>user.extras</code></td><td>Filas adicionales <code>[{ name, value }]</code></td></tr>
+      <tr><td><code>user.numIGV</code></td><td>Porcentaje de IGV a mostrar (A4)</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Convertir a PDF</h2>
+  <div class="tabs">
+    <div class="tab-panel" data-tab="Puppeteer (recomendado)">
+      <p>Usa Chrome sin interfaz. Instala <code>npm install puppeteer</code>. En los tickets se mide el alto real del
+        contenido para obtener <strong>una sola página del largo exacto</strong>:</p>
+<pre><code>import puppeteer from 'puppeteer';
+import { PdfReport } from '@jeanpierohc/sunat-manager';
+
+const browser = await puppeteer.launch();
+
+const pdf = new PdfReport(report, async (html) => {
+  const page = await browser.newPage();
+  await page.setContent(html, { waitUntil: 'load' });
+  let buffer;
+  if (await page.$('.ticket')) {
+    // tickets: ancho del papel y alto del contenido
+    const { width, height } = await page.evaluate(() => {
+      const r = document.querySelector('.ticket').getBoundingClientRect();
+      return { width: r.width, height: r.height };
+    });
+    buffer = await page.pdf({ width: `${Math.ceil(width)}px`, height: `${Math.ceil(height) + 2}px`, printBackground: true, pageRanges: '1' });
+  } else {
+    // A4 / A5: tamaño definido por la plantilla
+    buffer = await page.pdf({ preferCSSPageSize: true, printBackground: true });
+  }
+  await page.close();
+  return Buffer.from(buffer);
+});
+
+fs.writeFileSync('factura.pdf', await pdf.render(factura, params));
+// al terminar tu proceso: await browser.close();</code></pre>
+    </div>
+    <div class="tab-panel" data-tab="wkhtmltopdf">
+      <p>Igual que Greenter PHP. Requiere instalar <a href="https://wkhtmltopdf.org/downloads.html">wkhtmltopdf</a>:</p>
+<pre><code>import { PdfReport } from '@jeanpierohc/sunat-manager';
+
+const pdf = new PdfReport(report);
+pdf.setBinPath('C:/Program Files/wkhtmltopdf/bin/wkhtmltopdf.exe');   // en Linux suele estar en el PATH
+pdf.setFormat('80mm', { height: '200mm' });                         // tamaño de página
+
+const buffer = await pdf.render(factura, params);
+if (!buffer) console.error(pdf.getExporter().getError());</code></pre>
+      <div class="callout warn"><span class="ci">⚠️</span><div><p>wkhtmltopdf no admite alto automático: en tickets
+        ajusta <code>height</code> según la cantidad de ítems, o usa Puppeteer.</p></div></div>
+    </div>
+    <div class="tab-panel" data-tab="Solo HTML">
+      <p>Para ticketeras térmicas muchas veces basta con abrir el HTML e imprimir desde el navegador
+        (<kbd>Ctrl</kbd>+<kbd>P</kbd>) eligiendo la impresora térmica y su tamaño de papel, sin márgenes. El ancho del
+        ticket ya está definido en la plantilla.</p>
+    </div>
+  </div>
+
+  <h2>El código QR</h2>
+  <p>El QR que exige SUNAT contiene, separados por <code>|</code>:</p>
+  <pre><code class="no-hl">RUC | TIPO | SERIE | NÚMERO | IGV | TOTAL | FECHA | TIPO DOC. CLIENTE | NÚM. DOC. CLIENTE |
+20123456789|01|F001|125|55.85|366.62|2024-01-15|6|20000000001|</code></pre>
+
+  <h2>Plantillas propias</h2>
+  <p>Las plantillas usan sintaxis <a href="https://twig.symfony.com/doc/3.x/">Twig</a>. Copia una de
+    <code>node_modules/@jeanpierohc/sunat-manager/src/report/templates</code> a tu proyecto, modifícala y pasa la carpeta:
+    las tuyas tienen prioridad.</p>
+  <pre><code>const report = new HtmlReport('./mis-plantillas');
+report.setTemplate('mi-ticket.html.twig');</code></pre>
+  <p>Variables disponibles: <code>doc</code> (el comprobante) y <code>params</code>. Filtros: <code>n_format</code>,
+    <code>catalog('01')</code>, <code>image_b64</code>, <code>date('d/m/Y')</code>. Funciones: <code>qrCode(doc)</code>,
+    <code>legend(doc.legends, '1000')</code>.</p>
+</main>
+<script src="assets/app.js"></script>
+</body>
+</html>

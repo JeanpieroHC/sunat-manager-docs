@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Todos los documentos · sunat-manager</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<main>
+  <h1>🗂️ Todos los documentos</h1>
+  <p class="lead">Ejemplos listos para copiar de cada tipo de comprobante. Todos suponen esta configuración inicial:</p>
+  <pre data-title="config.js"><code>import fs from 'node:fs';
+import { See, SunatEndpoints, XmlErrorCodeProvider, DocumentMapper } from '@jeanpierohc/sunat-manager';
+
+export const mapper = new DocumentMapper({ company: {
+  ruc: '20123456789', razon_social: 'MI EMPRESA S.A.C.', ubigeo: '150101',
+  departamento: 'LIMA', provincia: 'LIMA', distrito: 'LIMA', direccion: 'AV. LIMA 123',
+} });
+
+export const see = new See();
+see.setService(SunatEndpoints.FE_BETA);
+see.setCertificate(fs.readFileSync('certificado.pem', 'utf8'));
+see.setClaveSOL('20123456789', 'MODDATOS', 'moddatos');
+see.setCodeProvider(new XmlErrorCodeProvider());</code></pre>
+
+  <h2>¿Qué documento necesito?</h2>
+  <div class="diagram">
+    <svg viewBox="0 0 860 300" role="img" aria-label="Árbol de decisión">
+      <rect class="svg-box accent" x="330" y="10" width="200" height="44" rx="8"/><text class="svg-title" x="430" y="37" text-anchor="middle">¿Qué quieres hacer?</text>
+      <path class="svg-line" d="M430 54 V80 M110 80 H750 M110 80 V100 M330 80 V100 M540 80 V100 M750 80 V100"/>
+      <rect class="svg-box" x="20" y="100" width="180" height="40" rx="8"/><text class="svg-title" x="110" y="125" text-anchor="middle">Vender</text>
+      <rect class="svg-box" x="240" y="100" width="180" height="40" rx="8"/><text class="svg-title" x="330" y="125" text-anchor="middle">Corregir una venta</text>
+      <rect class="svg-box" x="450" y="100" width="180" height="40" rx="8"/><text class="svg-title" x="540" y="125" text-anchor="middle">Anular</text>
+      <rect class="svg-box" x="660" y="100" width="180" height="40" rx="8"/><text class="svg-title" x="750" y="125" text-anchor="middle">Trasladar bienes</text>
+      <path class="svg-line" d="M110 140 V160 M50 160 H170 M50 160 V180 M170 160 V180"/>
+      <rect class="svg-box primary" x="5" y="180" width="95" height="54" rx="8"/><text class="svg-title" x="52" y="203" text-anchor="middle">Factura</text><text class="svg-sub" x="52" y="221" text-anchor="middle">cliente con RUC</text>
+      <rect class="svg-box primary" x="120" y="180" width="100" height="54" rx="8"/><text class="svg-title" x="170" y="203" text-anchor="middle">Boleta</text><text class="svg-sub" x="170" y="221" text-anchor="middle">consumidor final</text>
+      <path class="svg-line" d="M330 140 V160 M280 160 H380 M280 160 V180 M380 160 V180"/>
+      <rect class="svg-box primary" x="232" y="180" width="96" height="54" rx="8"/><text class="svg-title" x="280" y="203" text-anchor="middle">N. crédito</text><text class="svg-sub" x="280" y="221" text-anchor="middle">reducir / anular</text>
+      <rect class="svg-box primary" x="334" y="180" width="96" height="54" rx="8"/><text class="svg-title" x="382" y="203" text-anchor="middle">N. débito</text><text class="svg-sub" x="382" y="221" text-anchor="middle">aumentar</text>
+      <path class="svg-line" d="M540 140 V160 M490 160 H590 M490 160 V180 M590 160 V180"/>
+      <rect class="svg-box primary" x="442" y="180" width="96" height="54" rx="8"/><text class="svg-title" x="490" y="203" text-anchor="middle">Baja (RA)</text><text class="svg-sub" x="490" y="221" text-anchor="middle">facturas</text>
+      <rect class="svg-box primary" x="544" y="180" width="96" height="54" rx="8"/><text class="svg-title" x="592" y="203" text-anchor="middle">Resumen (RC)</text><text class="svg-sub" x="592" y="221" text-anchor="middle">boletas, estado 3</text>
+      <path class="svg-line" d="M750 140 V180"/>
+      <rect class="svg-box primary" x="690" y="180" width="120" height="54" rx="8"/><text class="svg-title" x="750" y="203" text-anchor="middle">Guía (09)</text><text class="svg-sub" x="750" y="221" text-anchor="middle">API REST GRE</text>
+      <text x="430" y="275" text-anchor="middle" class="svg-sub">Boletas: se pueden enviar una por una (send) o agrupadas en un resumen diario.</text>
+    </svg>
+  </div>
+
+  <h2>Factura</h2>
+  <pre><code>const factura = mapper.invoice({
+  serie: 'F001', correlativo: 1,
+  client: { tipo_documento: '6', numero_documento: '20000000001', razon_social: 'CLIENTE S.A.C.' },
+  detalles: [{ descripcion: 'PRODUCTO', cantidad: 1, mto_valor_unitario: 100 }],
+});
+const result = await see.send(factura);</code></pre>
+
+  <h2>Boleta</h2>
+  <pre><code>const boleta = mapper.boleta({
+  serie: 'B001', correlativo: 1,
+  client: { tipo_documento: '1', numero_documento: '45678912', razon_social: 'JUAN PÉREZ' },
+  // cliente sin documento (ventas menores): { tipo_documento: '0', numero_documento: '-', razon_social: 'CLIENTES VARIOS' }
+  detalles: [{ descripcion: 'PRODUCTO', cantidad: 1, mto_precio_unitario: 25 }],
+});
+const result = await see.send(boleta);   // envío individual (también puedes usar resumen diario)</code></pre>
+
+  <h2>Nota de crédito</h2>
+  <p>Corrige o anula una factura o boleta ya aceptada. Motivos frecuentes (catálogo 09): <code>01</code> anulación de la
+    operación, <code>04</code> descuento global, <code>06</code> devolución total, <code>07</code> devolución por ítem,
+    <code>13</code> ajuste de montos/fechas de pago.</p>
+  <pre><code>const nc = mapper.creditNote({
+  serie: 'FC01', correlativo: 1,        // serie F… para facturas, B… para boletas
+  tipo_doc_afectado: '01', num_doc_afectado: 'F001-1',
+  cod_motivo: '07', des_motivo: 'DEVOLUCIÓN DE PRODUCTO DAÑADO',
+  client: { tipo_documento: '6', numero_documento: '20000000001', razon_social: 'CLIENTE S.A.C.' },
+  detalles: [{ descripcion: 'PRODUCTO', cantidad: 1, mto_valor_unitario: 100 }],
+});
+await see.send(nc);</code></pre>
+
+  <h2>Nota de débito</h2>
+  <p>Aumenta el valor de un comprobante. Motivos (catálogo 10): <code>01</code> intereses por mora, <code>02</code> aumento
+    en el valor, <code>03</code> penalidades.</p>
+  <pre><code>const nd = mapper.debitNote({
+  serie: 'FD01', correlativo: 1,
+  tipo_doc_afectado: '01', num_doc_afectado: 'F001-1',
+  cod_motivo: '01', des_motivo: 'INTERESES POR MORA',
+  client: { tipo_documento: '6', numero_documento: '20000000001', razon_social: 'CLIENTE S.A.C.' },
+  detalles: [{ descripcion: 'INTERESES', unidad: 'ZZ', cantidad: 1, mto_valor_unitario: 20 }],
+});
+await see.send(nd);</code></pre>
+
+  <h2>Resumen diario de boletas</h2>
+  <p>Agrupa las boletas (y sus notas) de un día en un solo envío. También se usa para <strong>anular boletas</strong>
+    (estado <code>3</code>). La respuesta es un <strong>ticket</strong>:</p>
+  <pre><code>const resumen = mapper.summary({
+  correlativo: '001',                   // único por día
+  fecha_referencia: '2024-01-15',       // fecha de las boletas
+  detalles: [
+    { tipo_documento: '03', serie_numero: 'B001-1', estado: '1', cliente_tipo: '1', cliente_numero: '45678912',
+      total: 118, mto_oper_gravadas: 100, mto_igv: 18 },
+    { tipo_documento: '03', serie_numero: 'B001-2', estado: '3', cliente_tipo: '1', cliente_numero: '45678912',
+      total: 59, mto_oper_gravadas: 50, mto_igv: 9 },                       // anulación
+  ],
+});
+const res = await see.send(resumen);
+const ticket = res.getTicket();
+
+// SUNAT procesa en segundo plano: consulta el ticket después de unos segundos
+await new Promise((r) => setTimeout(r, 3000));
+const status = await see.getStatus(ticket);
+console.log(status.getCode(), status.getCdrResponse()?.getDescription());   // '0' = aceptado, '98' = en proceso</code></pre>
+  <table>
+    <thead><tr><th>Estado del ítem</th><th>Significado</th></tr></thead>
+    <tbody><tr><td><code>1</code></td><td>Adicionar</td></tr><tr><td><code>2</code></td><td>Modificar</td></tr><tr><td><code>3</code></td><td>Anular</td></tr></tbody>
+  </table>
+
+  <h2>Comunicación de baja</h2>
+  <p>Anula facturas (y sus notas) ya aceptadas. También responde con ticket:</p>
+  <pre><code>const baja = mapper.voided({
+  correlativo: '001',
+  fecha_referencia: '2024-01-15',       // fecha de emisión de la factura
+  detalles: [{ tipo_documento: '01', serie: 'F001', correlativo: 1, motivo: 'ERROR EN LA DESCRIPCIÓN' }],
+});
+const res = await see.send(baja);
+const status = await see.getStatus(res.getTicket());</code></pre>
+
+  <h2 id="retencion">Retención</h2>
+  <p>Los comprobantes de retención y percepción usan otro endpoint:</p>
+  <pre><code>const seeRet = new See();
+seeRet.setService(SunatEndpoints.RETENCION_BETA);     // producción: RETENCION_PRODUCCION
+seeRet.setCertificate(fs.readFileSync('certificado.pem', 'utf8'));
+seeRet.setClaveSOL('20123456789', 'MODDATOS', 'moddatos');
+
+const retencion = mapper.retention({
+  serie: 'R001', correlativo: 1,
+  proveedor: { tipo_documento: '6', numero_documento: '20000000001', razon_social: 'PROVEEDOR S.A.C.' },
+  regimen: '01', tasa: 3, imp_retenido: 3, imp_pagado: 97,
+  detalles: [{
+    tipo_doc: '01', num_doc: 'F001-1', fecha_emision: '2024-01-10', fecha_retencion: '2024-01-15',
+    moneda: 'PEN', imp_total: 100, imp_pagar: 97, imp_retenido: 3,
+    pagos: [{ moneda: 'PEN', fecha: '2024-01-15', importe: 100 }],
+    tipo_cambio: { fecha: '2024-01-15', factor: 1, moneda_obj: 'PEN', moneda_ref: 'PEN' },
+  }],
+});
+await seeRet.send(retencion);</code></pre>
+
+  <h2>Percepción</h2>
+  <p>El comprobante de percepción se construye con los modelos (no tiene atajo JSON):</p>
+  <pre><code>import { Perception, PerceptionDetail, Payment, Exchange, Client } from '@jeanpierohc/sunat-manager';
+
+const percepcion = new Perception()
+  .setSerie('P001').setCorrelativo('1').setFechaEmision(new Date())
+  .setCompany(mapper.company)
+  .setProveedor(new Client().setTipoDoc('6').setNumDoc('20000000001').setRznSocial('CLIENTE S.A.C.'))
+  .setRegimen('01').setTasa(2).setImpPercibido(2).setImpCobrado(102)
+  .setDetails([new PerceptionDetail()
+    .setTipoDoc('01').setNumDoc('F001-1').setFechaEmision(new Date()).setFechaPercepcion(new Date())
+    .setMoneda('PEN').setImpTotal(100).setImpCobrar(102).setImpPercibido(2)
+    .setCobros([new Payment().setMoneda('PEN').setFecha(new Date()).setImporte(100)])
+    .setTipoCambio(new Exchange().setFecha(new Date()).setFactor(1).setMonedaObj('PEN').setMonedaRef('PEN'))]);
+await seeRet.send(percepcion);</code></pre>
+
+  <h2>Construir con los modelos (estilo Greenter)</h2>
+  <p>Todo lo anterior también se puede hacer creando los objetos a mano, igual que en Greenter PHP. Útil si migras código existente:</p>
+  <pre><code>import { Invoice, SaleDetail, Company, Address, Client, FormaPagoContado, SaleCalculator } from '@jeanpierohc/sunat-manager';
+
+const invoice = new Invoice()
+  .setUblVersion('2.1').setTipoOperacion('0101').setTipoDoc('01')
+  .setSerie('F001').setCorrelativo('1').setFechaEmision(new Date())
+  .setFormaPago(new FormaPagoContado()).setTipoMoneda('PEN')
+  .setCompany(new Company().setRuc('20123456789').setRazonSocial('MI EMPRESA S.A.C.')
+    .setAddress(new Address().setUbigueo('150101').setDepartamento('LIMA').setProvincia('LIMA')
+      .setDistrito('LIMA').setDireccion('AV. LIMA 123')))
+  .setClient(new Client().setTipoDoc('6').setNumDoc('20000000001').setRznSocial('CLIENTE S.A.C.'))
+  .setDetails([new SaleDetail().setCodProducto('P001').setUnidad('NIU').setDescripcion('PRODUCTO')
+    .setCantidad(2).setMtoValorUnitario(50).setTipAfeIgv('10')]);
+
+new SaleCalculator().calculate(invoice);   // o llena tú cada monto: setMtoIGV, setMtoImpVenta…
+await see.send(invoice);</code></pre>
+
+  <h2>Otras operaciones de <code>See</code></h2>
+  <table>
+    <thead><tr><th>Método</th><th>Para qué</th></tr></thead>
+    <tbody>
+      <tr><td><code>see.getXmlSigned(doc)</code></td><td>Solo genera y firma el XML (sin enviar)</td></tr>
+      <tr><td><code>see.sendXml(Invoice, nombre, xml)</code></td><td>Envía un XML ya firmado</td></tr>
+      <tr><td><code>see.sendXmlFile(xml)</code></td><td>Envía un XML detectando tipo y nombre automáticamente</td></tr>
+      <tr><td><code>see.getStatus(ticket)</code></td><td>Consulta un ticket de resumen o baja</td></tr>
+      <tr><td><code>see.getFactory().getLastXml()</code></td><td>Último XML firmado enviado</td></tr>
+    </tbody>
+  </table>
+</main>
+<script src="assets/app.js"></script>
+</body>
+</html>

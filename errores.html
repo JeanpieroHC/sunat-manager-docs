@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Errores y FAQ · sunat-manager</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<main>
+  <h1>🩺 Errores y preguntas frecuentes</h1>
+  <p class="lead">Cómo diagnosticar un envío fallido, los errores más comunes de SUNAT y una lista de verificación para
+    pasar a producción.</p>
+
+  <h2>Diagnóstico rápido</h2>
+  <div class="diagram">
+    <svg viewBox="0 0 780 330" role="img" aria-label="Árbol de diagnóstico">
+      <rect class="svg-box accent" x="290" y="10" width="200" height="44" rx="8"/><text class="svg-title" x="390" y="37" text-anchor="middle">result = await see.send(doc)</text>
+      <path class="svg-line" d="M390 54 V80 M190 80 H590 M190 80 V100 M590 80 V100"/>
+      <text x="190" y="96" text-anchor="end" class="svg-sub">isSuccess() = false </text>
+      <text x="600" y="96" class="svg-sub"> isSuccess() = true</text>
+      <rect class="svg-box err" x="70" y="100" width="240" height="76" rx="8" style="stroke:var(--err)"/>
+      <text class="svg-title" x="190" y="124" text-anchor="middle">❌ No hubo CDR</text>
+      <text class="svg-sub" x="190" y="144" text-anchor="middle">result.getError(): conexión, credenciales</text>
+      <text class="svg-sub" x="190" y="160" text-anchor="middle">o excepción 0100–1999 → corrige y reenvía</text>
+      <rect class="svg-box ok" x="470" y="100" width="240" height="56" rx="8"/>
+      <text class="svg-title" x="590" y="124" text-anchor="middle">📬 Hay CDR</text>
+      <text class="svg-sub" x="590" y="142" text-anchor="middle">cdr.getCode()</text>
+      <path class="svg-line" d="M590 156 V190 M450 190 H730 M450 190 V210 M730 190 V210"/>
+      <rect class="svg-box ok" x="360" y="210" width="180" height="76" rx="8"/>
+      <text class="svg-title" x="450" y="236" text-anchor="middle">✅ 0 = aceptado</text>
+      <text class="svg-sub" x="450" y="256" text-anchor="middle">revisa getNotes()</text>
+      <text class="svg-sub" x="450" y="272" text-anchor="middle">(observaciones 4000+)</text>
+      <rect class="svg-box" x="640" y="210" width="180" height="76" rx="8" style="stroke:var(--err)" transform="translate(-50 0)"/>
+      <text class="svg-title" x="680" y="236" text-anchor="middle">⛔ 2000–3999</text>
+      <text class="svg-sub" x="680" y="256" text-anchor="middle">rechazado: corrige y</text>
+      <text class="svg-sub" x="680" y="272" text-anchor="middle">emite con otro número</text>
+    </svg>
+  </div>
+
+  <h2>Errores frecuentes</h2>
+  <table>
+    <thead><tr><th>Código / mensaje</th><th>Causa</th><th>Solución</th></tr></thead>
+    <tbody>
+      <tr><td><code>0102</code> Usuario o contraseña incorrectos</td><td>Clave SOL mal escrita o usuario sin permisos</td><td>En beta usa <code>MODDATOS</code>/<code>moddatos</code>. En producción, un usuario secundario con perfil de emisión electrónica</td></tr>
+      <tr><td>HTTP 401</td><td>Credenciales rechazadas, o fallas intermitentes del entorno beta (a veces con documentos concretos)</td><td>Verifica las credenciales; en beta prueba con fechas y montos actuales o reintenta más tarde</td></tr>
+      <tr><td><code>0154</code> El RUC del archivo no corresponde al RUC del usuario</td><td>El RUC del emisor no coincide con el de la clave SOL</td><td>Usa el mismo RUC en <code>company.ruc</code> y en <code>setClaveSOL</code></td></tr>
+      <tr><td><code>2017</code>, <code>2800</code> Documento del cliente</td><td>Factura a cliente sin RUC, o tipo de documento incorrecto</td><td>Facturas: cliente con RUC (<code>tipo_documento: '6'</code>). Consumidor final: boleta</td></tr>
+      <tr><td><code>2108</code> Presentación fuera de fecha</td><td>Comprobante enviado fuera del plazo permitido</td><td>Emite con la fecha actual</td></tr>
+      <tr><td><code>2644</code> IVAP</td><td>Mezcla de ítems IVAP con otros</td><td>Una factura IVAP solo puede tener ítems <code>17</code></td></tr>
+      <tr><td><code>3253</code> Monto de cuotas</td><td>Cuotas sin monto o que no suman</td><td>Usa <code>SaleCalculator</code>: completa las cuotas vacías</td></tr>
+      <tr><td><code>3267</code> Fecha de cuota</td><td>Cuota con fecha igual o anterior a la emisión</td><td>Fechas de pago posteriores a la emisión</td></tr>
+      <tr><td><code>3280</code> / <code>3278</code> / <code>3291</code> Montos</td><td>Totales o IGV que no cuadran</td><td>Deja que la librería calcule (no envíes <code>mto_imp_venta</code>)</td></tr>
+      <tr><td><code>3093</code> Percepción</td><td>Operación 2001 sin cargo de percepción</td><td>Informa <code>percepcion: { cod_regimen: '51', tasa: 2 }</code></td></tr>
+      <tr><td><code>3287</code> Anticipos</td><td>Anticipo sin descuento global 04</td><td>Informa <code>anticipos</code>: el descuento 04 se genera solo</td></tr>
+      <tr><td><code>4092</code> Nombre comercial (observación)</td><td>Nombre comercial vacío</td><td>Envía <code>nombre_comercial</code> (o deja que use la razón social)</td></tr>
+      <tr><td><code>4084</code> Descripción (observación)</td><td>Descripción con formato no válido (p. ej. de un solo carácter)</td><td>Usa descripciones completas</td></tr>
+      <tr><td><code>1033</code> Registrado previamente con otros datos</td><td>Ese número ya fue usado</td><td>Usa el siguiente correlativo; si buscas el CDR del original, consúltalo</td></tr>
+    </tbody>
+  </table>
+  <p>Busca cualquier código con <code>new XmlErrorCodeProvider().getValue('3253')</code>. Algunos códigos recientes (como
+    3278, 3280, 3287 o 3291) no están en ese catálogo; en ese caso SUNAT envía el mensaje completo en la respuesta.</p>
+
+  <h2>Preguntas frecuentes</h2>
+  <details><summary>¿Necesito Greenter o PHP instalado?</summary><p>No. Es una implementación completa en JavaScript; solo requiere Node.js 18+.</p></details>
+  <details><summary>¿Funciona con un OSE en lugar de SUNAT?</summary><p>Sí: usa <code>see.setService('https://url-del-ose/…/billService')</code> con las credenciales que te dé el OSE.</p></details>
+  <details><summary>¿Cómo manejo el correlativo?</summary><p>Tu sistema debe guardar el último número por serie (por ejemplo en base de datos, con bloqueo o transacción) y usar el siguiente. Si un comprobante es <strong>rechazado</strong>, ese número queda inutilizado: emite el siguiente. Si hay <strong>error de conexión</strong> (sin CDR), reenvía el mismo número.</p></details>
+  <details><summary>Se cortó la conexión y no sé si SUNAT lo recibió</summary><p>Con credenciales de producción consulta su estado con <code>ConsultCdrService.getStatusCdr</code>: si existe, recuperas el CDR; si no, reenvíalo con el mismo número.</p></details>
+  <details><summary>¿Qué debo guardar?</summary><p>El <strong>XML firmado</strong> y el <strong>ZIP del CDR</strong> de cada comprobante. El PDF puede regenerarse en cualquier momento desde el XML (<a href="validacion.html">InvoiceParser</a> + <a href="impresion.html">HtmlReport</a>).</p></details>
+  <details><summary>¿Por qué el ICBPER se cobra solo si pongo <code>icbper: true</code>?</summary><p>El modelo <code>SaleDetail</code> (heredado de Greenter) trae un factor ICBPER por defecto de 0.30 en todos los ítems; si la calculadora lo usara, cobraría ICBPER a todo. Por eso las bolsas se marcan explícitamente.</p></details>
+  <details><summary>¿Las fechas se guardan en UTC?</summary><p>Los <code>Date</code> son instantes; al generar el XML se formatean en hora de Lima. Una venta del 15/01 a las 23:00 en Lima sale con fecha 15/01 aunque en UTC ya sea 16/01.</p></details>
+  <details><summary>¿Puedo usarlo desde CommonJS (<code>require</code>)?</summary><p>Usa <code>const lib = await import('@jeanpierohc/sunat-manager')</code> dentro de una función async.</p></details>
+  <details><summary>Las pruebas en beta a veces fallan con HTTP 401 sin motivo</summary><p>El entorno beta de SUNAT es inestable: hemos visto 401 intermitentes al enviar muchos comprobantes seguidos, y 401 persistentes con algún documento concreto (por ejemplo, datos de muestra con fechas antiguas) que se resuelven usando fechas y montos actuales.</p></details>
+
+  <h2>Lista para pasar a producción</h2>
+  <ol class="steps">
+    <li><h4>Certificado digital real</h4><p>Convertido a PEM y guardado de forma segura. Revisa su fecha de vencimiento.</p></li>
+    <li><h4>Usuario SOL secundario</h4><p>Créalo en SUNAT Operaciones en Línea con permisos de emisión electrónica.</p></li>
+    <li><h4>Afiliación a SEE – Del contribuyente</h4><p>Regístrate como emisor electrónico y registra tu certificado en SUNAT Operaciones en Línea.</p></li>
+    <li><h4>Endpoints de producción</h4><p><code>SunatEndpoints.FE_PRODUCCION</code> y, si aplica, <code>RETENCION_PRODUCCION</code> y la API de guías.</p></li>
+    <li><h4>Correlativos y almacenamiento</h4><p>Numeración sin saltos ni duplicados; guarda XML y CDR de cada comprobante.</p></li>
+    <li><h4>Manejo de errores</h4><p>Distingue error de conexión (reintentar) de rechazo (nuevo número) y registra las observaciones.</p></li>
+    <li><h4>Resúmenes y bajas</h4><p>Si usas resumen diario, consulta el ticket hasta obtener el CDR y guárdalo.</p></li>
+  </ol>
+</main>
+<script src="assets/app.js"></script>
+</body>
+</html>

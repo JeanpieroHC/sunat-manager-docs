@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Referencia de la API · sunat-manager</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<main>
+  <h1>🧩 Referencia de la API</h1>
+  <p class="lead">Clases y métodos principales. Los modelos siguen la convención de Greenter: cada propiedad tiene
+    <code>getX()</code> y <code>setX(valor)</code>, y los <code>set</code> se pueden encadenar.</p>
+  <div class="callout info"><span class="ci">⏳</span><div><p><strong>Asíncrono:</strong> todo lo que habla con SUNAT o genera
+    PDF devuelve una <code>Promise</code> (usa <code>await</code>): <code>See.send</code>, <code>See.getStatus</code>,
+    <code>Api.*</code>, <code>ConsultaCpe.*</code>, <code>PdfReport.render</code>. Generar XML, firmar, calcular, validar y
+    leer XML es síncrono.</p></div></div>
+
+  <h2>See (facturas, boletas, notas, resúmenes, bajas)</h2>
+  <table>
+    <thead><tr><th>Método</th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr><td><code>setService(url)</code></td><td>Endpoint SOAP (<code>SunatEndpoints.*</code>)</td></tr>
+      <tr><td><code>setCertificate(pem)</code></td><td>Certificado PEM (llave + certificado)</td></tr>
+      <tr><td><code>setClaveSOL(ruc, usuario, clave)</code></td><td>Credenciales SOL</td></tr>
+      <tr><td><code>setCredentials(usuarioCompleto, clave)</code></td><td>Alternativa: <code>RUC+USUARIO</code> en un solo texto</td></tr>
+      <tr><td><code>setCodeProvider(provider)</code></td><td>Mensajes de error (<code>XmlErrorCodeProvider</code>)</td></tr>
+      <tr><td><code>setCachePath(dir)</code></td><td>Compatibilidad con Greenter (sin efecto)</td></tr>
+      <tr><td><code>await send(doc)</code></td><td>Genera, firma y envía. Devuelve <code>BillResult</code> o <code>SummaryResult</code></td></tr>
+      <tr><td><code>await sendXml(Clase, nombre, xml)</code></td><td>Envía un XML ya firmado</td></tr>
+      <tr><td><code>await sendXmlFile(xml)</code></td><td>Envía un XML detectando tipo y nombre</td></tr>
+      <tr><td><code>await getStatus(ticket)</code></td><td>Estado de un resumen o baja (<code>StatusResult</code>)</td></tr>
+      <tr><td><code>getXmlSigned(doc)</code></td><td>Solo genera y firma</td></tr>
+      <tr><td><code>getFactory().getLastXml()</code></td><td>Último XML firmado</td></tr>
+    </tbody>
+  </table>
+
+  <h3>SunatEndpoints</h3>
+  <table>
+    <tbody>
+      <tr><td><code>FE_BETA</code> / <code>FE_PRODUCCION</code></td><td>Facturas, boletas, notas, resúmenes y bajas</td></tr>
+      <tr><td><code>RETENCION_BETA</code> / <code>RETENCION_PRODUCCION</code></td><td>Retenciones y percepciones</td></tr>
+      <tr><td><code>GUIA_BETA</code> / <code>GUIA_PRODUCCION</code></td><td>Guías por SOAP (formato antiguo)</td></tr>
+      <tr><td><code>FE_CONSULTA_CDR</code></td><td>Consulta de estado y CDR</td></tr>
+      <tr><td><code>FE_HOMOLOGACION</code></td><td>Homologación</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Resultados</h2>
+  <table>
+    <thead><tr><th>Clase</th><th>Métodos</th></tr></thead>
+    <tbody>
+      <tr><td><code>BillResult</code></td><td><code>isSuccess()</code>, <code>getError()</code>, <code>getCdrResponse()</code>, <code>getCdrZip()</code> (Buffer)</td></tr>
+      <tr><td><code>SummaryResult</code></td><td><code>isSuccess()</code>, <code>getError()</code>, <code>getTicket()</code></td></tr>
+      <tr><td><code>StatusResult</code></td><td><code>getCode()</code> (<code>0</code> listo, <code>98</code> en proceso, <code>99</code> con errores), <code>getCdrResponse()</code>, <code>getCdrZip()</code></td></tr>
+      <tr><td><code>CdrResponse</code></td><td><code>getId()</code>, <code>getCode()</code>, <code>getDescription()</code>, <code>getNotes()</code>, <code>isAccepted()</code></td></tr>
+      <tr><td><code>Error</code></td><td><code>getCode()</code>, <code>getMessage()</code></td></tr>
+    </tbody>
+  </table>
+
+  <h2>Api (guías de remisión)</h2>
+  <table>
+    <tbody>
+      <tr><td><code>new Api({ auth?, cpe? })</code></td><td>Endpoints (por defecto, producción de SUNAT)</td></tr>
+      <tr><td><code>setApiCredentials(clientId, secret)</code></td><td>Credenciales de API</td></tr>
+      <tr><td><code>setClaveSOL(ruc, usuario, clave)</code>, <code>setCertificate(pem)</code></td><td>Igual que <code>See</code></td></tr>
+      <tr><td><code>await send(despatch)</code></td><td>Envía y devuelve ticket</td></tr>
+      <tr><td><code>await getStatus(ticket)</code></td><td>Consulta el ticket</td></tr>
+      <tr><td><code>getLastXml()</code></td><td>Último XML firmado</td></tr>
+    </tbody>
+  </table>
+
+  <h2>DocumentMapper</h2>
+  <table>
+    <tbody>
+      <tr><td><code>new DocumentMapper({ company, calcular, calculator })</code></td><td>Ver <a href="json.html">Comprobantes desde JSON</a></td></tr>
+      <tr><td><code>invoice(data)</code>, <code>boleta(data)</code></td><td>→ <code>Invoice</code></td></tr>
+      <tr><td><code>note(data)</code>, <code>creditNote(data)</code>, <code>debitNote(data)</code></td><td>→ <code>Note</code></td></tr>
+      <tr><td><code>summary(data)</code>, <code>voided(data)</code></td><td>→ <code>Summary</code>, <code>Voided</code></td></tr>
+      <tr><td><code>despatch(data)</code>, <code>retention(data)</code></td><td>→ <code>Despatch</code>, <code>Retention</code></td></tr>
+      <tr><td><code>create(data)</code></td><td>Según <code>tipo_documento</code> o <code>tipo</code></td></tr>
+      <tr><td><code>mapCompany(data)</code>, <code>mapClient(data)</code></td><td>Partes sueltas</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Cálculo</h2>
+  <table>
+    <tbody>
+      <tr><td><code>new SaleCalculator({ igv, ivap, icbper, legends })</code></td><td>Ver <a href="calculos.html">Cálculo de impuestos</a></td></tr>
+      <tr><td><code>calculate(doc)</code></td><td>Completa ítems, totales, percepción, detracción, cuotas y leyendas</td></tr>
+      <tr><td><code>calculateDetail(detail)</code></td><td>Solo un ítem</td></tr>
+      <tr><td><code>montoEnLetras(monto, moneda?, { prefix, currencyName })</code></td><td>Texto de la leyenda 1000</td></tr>
+      <tr><td><code>integerToWords(n)</code></td><td>Entero a letras</td></tr>
+      <tr><td><code>new LegendGenerator().apply(doc)</code></td><td>Agrega las leyendas que falten</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Modelos principales</h2>
+  <div class="tabs">
+    <div class="tab-panel" data-tab="Invoice">
+      <p><code>ublVersion</code>, <code>tipoOperacion</code>, <code>tipoDoc</code>, <code>serie</code>, <code>correlativo</code>,
+        <code>fechaEmision</code>, <code>fecVencimiento</code>, <code>tipoMoneda</code>, <code>company</code>, <code>client</code>,
+        <code>formaPago</code>, <code>cuotas</code>, <code>details</code>, <code>legends</code>, <code>mtoOperGravadas</code>,
+        <code>mtoOperExoneradas</code>, <code>mtoOperInafectas</code>, <code>mtoOperExportacion</code>, <code>mtoOperGratuitas</code>,
+        <code>mtoIGV</code>, <code>mtoIGVGratuitas</code>, <code>mtoISC</code>, <code>icbper</code>, <code>mtoBaseIvap</code>, <code>mtoIvap</code>,
+        <code>totalImpuestos</code>, <code>valorVenta</code>, <code>subTotal</code>, <code>mtoImpVenta</code>, <code>redondeo</code>,
+        <code>descuentos</code>, <code>cargos</code>, <code>anticipos</code>, <code>totalAnticipos</code>, <code>detraccion</code>,
+        <code>perception</code>, <code>guias</code>, <code>compra</code>, <code>observacion</code>.
+        <br><code>getName()</code> → <code>20123456789-01-F001-1</code></p>
+    </div>
+    <div class="tab-panel" data-tab="SaleDetail">
+      <p><code>codProducto</code>, <code>codProdSunat</code>, <code>unidad</code>, <code>descripcion</code>, <code>cantidad</code>,
+        <code>mtoValorUnitario</code>, <code>mtoPrecioUnitario</code>, <code>mtoValorGratuito</code>, <code>mtoValorVenta</code>,
+        <code>tipAfeIgv</code>, <code>porcentajeIgv</code>, <code>mtoBaseIgv</code>, <code>igv</code>, <code>tipSisIsc</code>,
+        <code>porcentajeIsc</code>, <code>mtoBaseIsc</code>, <code>isc</code>, <code>factorIcbper</code>, <code>icbper</code>,
+        <code>totalImpuestos</code>, <code>descuentos</code>, <code>cargos</code>, <code>atributos</code>.</p>
+    </div>
+    <div class="tab-panel" data-tab="Note">
+      <p>Como <code>Invoice</code> (sin descuentos/anticipos) más <code>tipDocAfectado</code>, <code>numDocfectado</code>,
+        <code>codMotivo</code>, <code>desMotivo</code>.</p>
+    </div>
+    <div class="tab-panel" data-tab="Company / Client">
+      <p><strong>Company:</strong> <code>ruc</code>, <code>razonSocial</code>, <code>nombreComercial</code>, <code>address</code>,
+        <code>email</code>, <code>telephone</code>.<br>
+        <strong>Address:</strong> <code>ubigueo</code>, <code>departamento</code>, <code>provincia</code>, <code>distrito</code>,
+        <code>urbanizacion</code>, <code>direccion</code>, <code>codLocal</code>, <code>codigoPais</code>.<br>
+        <strong>Client:</strong> <code>tipoDoc</code>, <code>numDoc</code>, <code>rznSocial</code>, <code>address</code>,
+        <code>email</code>, <code>telephone</code>.</p>
+    </div>
+    <div class="tab-panel" data-tab="Otros">
+      <p><code>Summary</code> / <code>SummaryDetail</code>, <code>Voided</code> / <code>VoidedDetail</code>, <code>Reversion</code>,
+        <code>Despatch</code> / <code>Shipment</code> / <code>Direction</code> / <code>Driver</code> / <code>Vehicle</code> /
+        <code>Transportist</code> / <code>DespatchDetail</code>, <code>Retention</code> / <code>RetentionDetail</code>,
+        <code>Perception</code> / <code>PerceptionDetail</code>, <code>Payment</code>, <code>Exchange</code>, <code>Charge</code>,
+        <code>Prepayment</code>, <code>Detraction</code>, <code>SalePerception</code>, <code>Cuota</code>,
+        <code>FormaPagoContado</code>, <code>FormaPagoCredito</code>, <code>Legend</code>, <code>Document</code>.</p>
+    </div>
+  </div>
+
+  <h2>Fechas</h2>
+  <p>Las fechas son objetos <code>Date</code> y se formatean en <strong>hora de Lima</strong> (America/Lima). Para crear una
+    fecha sin hora usa <code>toDate('2024-01-15')</code> (exportado desde <code>…/core</code>) o pasa el texto directamente a
+    <code>DocumentMapper</code>.</p>
+
+  <h2>Otros módulos</h2>
+  <table>
+    <thead><tr><th>Clase</th><th>Página</th></tr></thead>
+    <tbody>
+      <tr><td><code>HtmlReport</code>, <code>PdfReport</code>, <code>DefaultTemplateResolver</code>, <code>XmlUtils</code></td><td><a href="impresion.html">PDF y tickets</a></td></tr>
+      <tr><td><code>ConsultaCpe</code>, <code>ConsultaCpeService</code>, <code>ConsultCdrService</code></td><td><a href="consultas.html">Consultas y CDR</a></td></tr>
+      <tr><td><code>SymfonyValidator</code>, <code>CpeValidator</code>, <code>XmlErrorCodeProvider</code>, parsers</td><td><a href="validacion.html">Validar y leer XML</a></td></tr>
+      <tr><td><code>X509Certificate</code>, <code>SignedXml</code></td><td><a href="certificados.html">Certificado digital</a></td></tr>
+      <tr><td><code>GeneratorFactory</code>, <code>data.*Store</code></td><td>Documentos de ejemplo para pruebas</td></tr>
+    </tbody>
+  </table>
+</main>
+<script src="assets/app.js"></script>
+</body>
+</html>

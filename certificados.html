@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Certificado digital · sunat-manager</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<main>
+  <h1>🔐 Certificado digital y firma</h1>
+  <p class="lead">Cada comprobante debe ir firmado con el certificado digital de tu empresa. La librería usa el formato
+    <strong>PEM</strong> (texto) y te ayuda a convertir tu certificado <code>.pfx</code> / <code>.p12</code>.</p>
+
+  <h2>¿Qué es y dónde lo consigo?</h2>
+  <p>Es un archivo que contiene una <strong>llave privada</strong> (secreta, solo tuya) y un <strong>certificado</strong>
+    (público, dice quién eres). Se compra a una entidad certificadora acreditada o, para empresas que califican, SUNAT
+    entrega uno gratuito. Normalmente lo recibes como <code>.pfx</code> o <code>.p12</code> con una contraseña.</p>
+
+  <div class="diagram">
+    <svg viewBox="0 0 760 170" role="img" aria-label="Cómo funciona la firma">
+      <rect class="svg-box" x="10" y="50" width="130" height="60" rx="8"/><text class="svg-title" x="75" y="78" text-anchor="middle">📄 XML</text><text class="svg-sub" x="75" y="96" text-anchor="middle">comprobante</text>
+      <path class="svg-line svg-dash" d="M140 80 H190"/>
+      <rect class="svg-box" x="190" y="50" width="150" height="60" rx="8"/><text class="svg-title" x="265" y="78" text-anchor="middle">#️⃣ Hash SHA-1</text><text class="svg-sub" x="265" y="96" text-anchor="middle">huella del contenido</text>
+      <path class="svg-line svg-dash" d="M340 80 H390"/>
+      <rect class="svg-box primary" x="390" y="50" width="160" height="60" rx="8"/><text class="svg-title" x="470" y="78" text-anchor="middle">🔑 Llave privada</text><text class="svg-sub" x="470" y="96" text-anchor="middle">cifra la huella (RSA)</text>
+      <path class="svg-line svg-dash" d="M550 80 H600"/>
+      <rect class="svg-box ok" x="600" y="50" width="150" height="60" rx="8"/><text class="svg-title" x="675" y="78" text-anchor="middle">✍️ ds:Signature</text><text class="svg-sub" x="675" y="96" text-anchor="middle">+ certificado público</text>
+      <text x="380" y="150" text-anchor="middle" class="svg-sub">SUNAT usa el certificado público para comprobar que nadie modificó el XML después de firmarlo.</text>
+    </svg>
+  </div>
+
+  <h2>Convertir PFX a PEM</h2>
+  <pre><code>import fs from 'node:fs';
+import { X509Certificate, X509ContentType } from '@jeanpierohc/sunat-manager';
+
+const cert = X509Certificate.fromFile('mi-certificado.pfx', 'contraseña');
+
+fs.writeFileSync('certificado.pem', cert.export(X509ContentType.PEM));   // llave + certificado (para firmar)
+fs.writeFileSync('publico.cer', cert.export(X509ContentType.CER));       // solo el certificado público
+
+console.log(cert.getInfo());
+// { subject: { CN: '20123456789 MI EMPRESA', … }, issuer: {…}, serialNumber, validFrom, validTo }</code></pre>
+  <p>Soporta los formatos usados en Perú: certificados modernos (AES-256), antiguos (3DES / RC2-40) y contraseñas con
+    tildes o <code>ñ</code>. Si la contraseña es incorrecta lanza <em>"Contraseña del certificado incorrecta"</em>.</p>
+
+  <div class="callout warn"><span class="ci">🔒</span><div>
+    <p><strong>Protege el archivo PEM:</strong> contiene tu llave privada sin contraseña. No lo subas a Git, guárdalo con
+      permisos restringidos o en un gestor de secretos, y cárgalo en tiempo de ejecución.</p>
+  </div></div>
+
+  <h3>Revisar el vencimiento</h3>
+  <pre><code>const { validTo } = X509Certificate.fromFile('mi-certificado.pfx', 'contraseña').getInfo();
+const dias = Math.floor((validTo - Date.now()) / 86400000);
+if (dias &lt; 30) console.warn(`El certificado vence en ${dias} días`);</code></pre>
+
+  <h2>Firmar y verificar</h2>
+  <p><code>See</code> firma automáticamente. Si necesitas firmar un XML por tu cuenta:</p>
+  <pre><code>import { SignedXml } from '@jeanpierohc/sunat-manager';
+
+const signer = new SignedXml().setCertificate(fs.readFileSync('certificado.pem', 'utf8'));
+const firmado = signer.signXml(xmlSinFirmar);    // agrega ds:Signature en ext:ExtensionContent
+signer.verify(firmado);                          // true si la firma es válida</code></pre>
+
+  <h2>Certificado para pruebas</h2>
+  <p>En beta cualquier certificado sirve, incluso autofirmado:</p>
+  <pre><code class="no-hl">openssl req -x509 -newkey rsa:2048 -nodes -keyout llave.pem -out cert.pem -days 365 -subj "/CN=PRUEBA"
+cat llave.pem cert.pem > certificado.pem</code></pre>
+</main>
+<script src="assets/app.js"></script>
+</body>
+</html>

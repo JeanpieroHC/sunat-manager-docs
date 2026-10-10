@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Conceptos de facturación electrónica · sunat-manager</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<main>
+  <h1>📚 Conceptos de facturación electrónica</h1>
+  <p class="lead">Si nunca has trabajado con SUNAT, empieza aquí. Explicamos, sin tecnicismos, todo lo que necesitas
+    saber para entender qué hace la librería y por qué.</p>
+
+  <h2>¿Qué es un comprobante electrónico?</h2>
+  <p>Un <strong>comprobante de pago electrónico (CPE)</strong> es una factura, boleta o nota que, en lugar de imprimirse en
+    papel con talonario, se genera como un archivo <strong>XML</strong> con un formato definido por SUNAT, se
+    <strong>firma digitalmente</strong> (como una firma notarial, pero matemática) y se <strong>envía a SUNAT</strong> para
+    que lo valide. Lo que le entregas a tu cliente (PDF o ticket) es solo una <em>representación impresa</em> de ese XML.</p>
+
+  <div class="cards">
+    <div class="card"><div class="ci">📄</div><h4>El XML</h4><p>Es el comprobante "real". Tiene un formato estándar internacional llamado <strong>UBL 2.1</strong>.</p></div>
+    <div class="card"><div class="ci">🔐</div><h4>La firma</h4><p>Garantiza que lo emitiste tú y que nadie lo modificó. Requiere un <strong>certificado digital</strong>.</p></div>
+    <div class="card"><div class="ci">📬</div><h4>El CDR</h4><p>La <strong>Constancia de Recepción</strong> que SUNAT devuelve: dice si el comprobante fue aceptado o rechazado.</p></div>
+    <div class="card"><div class="ci">🖨️</div><h4>La representación impresa</h4><p>El PDF o ticket que ve el cliente. Incluye un código QR y el "hash" de la firma.</p></div>
+  </div>
+
+  <h2>Tipos de comprobantes</h2>
+  <p>SUNAT identifica cada tipo de documento con un código de dos dígitos (catálogo 01). La <strong>serie</strong> empieza
+    con una letra que depende del tipo:</p>
+  <table>
+    <thead><tr><th>Código</th><th>Documento</th><th>Serie</th><th>¿Cuándo se usa?</th><th>En la librería</th></tr></thead>
+    <tbody>
+      <tr><td><code>01</code></td><td><strong>Factura</strong></td><td><code>F001</code></td><td>Venta a empresas o personas con RUC (permite usar crédito fiscal)</td><td><code>Invoice</code></td></tr>
+      <tr><td><code>03</code></td><td><strong>Boleta de venta</strong></td><td><code>B001</code></td><td>Venta a consumidores finales (DNI o sin documento)</td><td><code>Invoice</code></td></tr>
+      <tr><td><code>07</code></td><td><strong>Nota de crédito</strong></td><td><code>FC01</code> / <code>BC01</code></td><td>Anular o disminuir una factura/boleta (devoluciones, descuentos, errores)</td><td><code>Note</code></td></tr>
+      <tr><td><code>08</code></td><td><strong>Nota de débito</strong></td><td><code>FD01</code> / <code>BD01</code></td><td>Aumentar el monto de una factura/boleta (intereses, penalidades)</td><td><code>Note</code></td></tr>
+      <tr><td><code>09</code></td><td><strong>Guía de remisión remitente</strong></td><td><code>T001</code></td><td>Sustenta el traslado de bienes</td><td><code>Despatch</code></td></tr>
+      <tr><td><code>20</code></td><td><strong>Comprobante de retención</strong></td><td><code>R001</code></td><td>Agentes de retención del IGV</td><td><code>Retention</code></td></tr>
+      <tr><td><code>40</code></td><td><strong>Comprobante de percepción</strong></td><td><code>P001</code></td><td>Agentes de percepción</td><td><code>Perception</code></td></tr>
+      <tr><td><code>RC</code></td><td><strong>Resumen diario</strong></td><td>—</td><td>Informar varias boletas de un día en un solo envío</td><td><code>Summary</code></td></tr>
+      <tr><td><code>RA</code></td><td><strong>Comunicación de baja</strong></td><td>—</td><td>Anular facturas ya aceptadas</td><td><code>Voided</code></td></tr>
+    </tbody>
+  </table>
+  <div class="callout info"><span class="ci">💡</span><div><p><strong>Serie y correlativo:</strong> el número de un comprobante
+    tiene la forma <code>SERIE-CORRELATIVO</code>, por ejemplo <code>F001-000123</code>. La serie tiene 4 caracteres y el
+    correlativo es un número que aumenta de 1 en 1 sin saltos. <strong>Tu sistema</strong> es responsable de llevar la cuenta.</p></div></div>
+
+  <h2>Anatomía de una factura</h2>
+  <p>Cada parte de la factura impresa corresponde a una propiedad del modelo <code>Invoice</code>:</p>
+  <div class="diagram">
+    <svg viewBox="0 0 900 470" role="img" aria-label="Partes de una factura">
+      <rect x="40" y="10" width="420" height="450" rx="8" fill="#fff" stroke="#d1d5db"/>
+      <!-- emisor -->
+      <rect x="60" y="28" width="220" height="60" rx="6" fill="#fde8eb" class="pulse"/>
+      <text x="72" y="52" font-size="14" font-weight="700" fill="#111">MI EMPRESA S.A.C.</text>
+      <text x="72" y="72" font-size="11" fill="#555">AV. LIMA 123 - LIMA</text>
+      <rect x="300" y="28" width="140" height="60" rx="6" fill="#fff" stroke="#c8102e"/>
+      <text x="370" y="48" font-size="11" text-anchor="middle" fill="#111">RUC 20123456789</text>
+      <text x="370" y="64" font-size="12" font-weight="700" text-anchor="middle" fill="#c8102e">FACTURA ELECTRÓNICA</text>
+      <text x="370" y="80" font-size="12" text-anchor="middle" fill="#111">F001-000123</text>
+      <!-- cliente -->
+      <rect x="60" y="100" width="380" height="50" rx="6" fill="#e0ebff"/>
+      <text x="72" y="121" font-size="11" fill="#111">Cliente: CLIENTE S.A.C. · RUC 20000000001</text>
+      <text x="72" y="139" font-size="11" fill="#111">Fecha: 15/01/2024 · Moneda: SOLES</text>
+      <!-- items -->
+      <rect x="60" y="162" width="380" height="120" rx="6" fill="#fef3c7"/>
+      <text x="72" y="182" font-size="11" font-weight="700" fill="#111">Cant.   Descripción                 P.Unit.   Importe</text>
+      <text x="72" y="204" font-size="11" fill="#111">2       PRODUCTO A                  118.00    236.00</text>
+      <text x="72" y="224" font-size="11" fill="#111">1       SERVICIO B                   59.00     59.00</text>
+      <!-- totales -->
+      <rect x="260" y="294" width="180" height="84" rx="6" fill="#d1fae5"/>
+      <text x="272" y="314" font-size="11" fill="#111">Op. gravadas   250.00</text>
+      <text x="272" y="334" font-size="11" fill="#111">IGV 18%          45.00</text>
+      <text x="272" y="358" font-size="13" font-weight="800" fill="#111">TOTAL  S/ 295.00</text>
+      <!-- leyenda -->
+      <rect x="60" y="294" width="185" height="84" rx="6" fill="#ede9fe"/>
+      <text x="70" y="318" font-size="10" fill="#111">SON DOSCIENTOS NOVENTA</text>
+      <text x="70" y="334" font-size="10" fill="#111">Y CINCO CON 00/100 SOLES</text>
+      <!-- qr -->
+      <rect x="60" y="392" width="56" height="56" fill="#111"/>
+      <rect x="68" y="400" width="14" height="14" fill="#fff"/><rect x="94" y="400" width="14" height="14" fill="#fff"/><rect x="68" y="426" width="14" height="14" fill="#fff"/>
+      <text x="128" y="415" font-size="10" fill="#555">Resumen (hash): qqnr2dN4p/HmaEA…</text>
+      <text x="128" y="432" font-size="10" fill="#555">Representación impresa de la factura electrónica</text>
+      <!-- etiquetas -->
+      <g font-size="13">
+        <line x1="280" y1="58" x2="520" y2="40" class="svg-line"/><text x="526" y="44" class="svg-title">company → Company (emisor)</text>
+        <line x1="440" y1="58" x2="520" y2="72" class="svg-line"/><text x="526" y="76" class="svg-title">tipoDoc, serie, correlativo</text>
+        <line x1="440" y1="125" x2="520" y2="125" class="svg-line"/><text x="526" y="129" class="svg-title">client, fechaEmision, tipoMoneda</text>
+        <line x1="440" y1="210" x2="520" y2="210" class="svg-line"/><text x="526" y="214" class="svg-title">details → SaleDetail[]</text>
+        <line x1="440" y1="336" x2="520" y2="300" class="svg-line"/><text x="526" y="304" class="svg-title">mtoOperGravadas, mtoIGV, mtoImpVenta</text>
+        <line x1="245" y1="336" x2="520" y2="345" class="svg-line"/><text x="526" y="349" class="svg-title">legends (leyenda 1000)</text>
+        <line x1="116" y1="420" x2="520" y2="420" class="svg-line"/><text x="526" y="424" class="svg-title">QR + hash de la firma</text>
+      </g>
+    </svg>
+    <div class="caption">Con <code>SaleCalculator</code> o <code>DocumentMapper</code> solo llenas lo amarillo (ítems); lo verde y lo morado se calcula solo.</div>
+  </div>
+
+  <h2>El IGV y los tipos de afectación</h2>
+  <p>El <strong>IGV</strong> (Impuesto General a las Ventas) es 18% en general. Pero no todo lo que vendes paga IGV: cada
+    ítem indica su <strong>tipo de afectación</strong> (catálogo 07):</p>
+  <table>
+    <thead><tr><th>Código</th><th>Tipo</th><th>¿Paga IGV?</th><th>Ejemplo</th></tr></thead>
+    <tbody>
+      <tr><td><code>10</code></td><td>Gravado</td><td><span class="badge ok">Sí, 18%</span></td><td>La mayoría de ventas</td></tr>
+      <tr><td><code>17</code></td><td>IVAP</td><td><span class="badge warn">4% IVAP</span></td><td>Arroz pilado</td></tr>
+      <tr><td><code>20</code></td><td>Exonerado</td><td><span class="badge info">No</span></td><td>Productos de la Amazonía, algunos alimentos</td></tr>
+      <tr><td><code>30</code></td><td>Inafecto</td><td><span class="badge info">No</span></td><td>Libros, servicios de educación</td></tr>
+      <tr><td><code>40</code></td><td>Exportación</td><td><span class="badge info">No</span></td><td>Venta al exterior</td></tr>
+      <tr><td><code>11</code>–<code>16</code></td><td>Gratuito gravado (retiro)</td><td><span class="badge warn">IGV referencial</span></td><td>Bonificaciones, premios, muestras</td></tr>
+      <tr><td><code>21</code>, <code>31</code>–<code>37</code></td><td>Gratuito exonerado / inafecto</td><td><span class="badge info">No</span></td><td>Regalos de productos exonerados/inafectos</td></tr>
+    </tbody>
+  </table>
+  <p>Otros tributos que la librería maneja: <strong>ISC</strong> (Impuesto Selectivo al Consumo: licores, cigarros,
+    combustibles), <strong>ICBPER</strong> (impuesto a las bolsas plásticas, S/ 0.50 por bolsa) y
+    <strong>percepciones/detracciones</strong>. Ver <a href="calculos.html">Cálculo de impuestos</a>.</p>
+
+  <h2>¿Valor unitario o precio unitario?</h2>
+  <div class="cards">
+    <div class="card"><div class="ci">🏷️</div><h4>Valor unitario</h4><p><strong>Sin</strong> impuestos. Ej.: S/ 100.00 (<code>mto_valor_unitario</code>)</p></div>
+    <div class="card"><div class="ci">💰</div><h4>Precio unitario</h4><p><strong>Con</strong> impuestos. Ej.: S/ 118.00 (<code>mto_precio_unitario</code>)</p></div>
+  </div>
+  <p>Puedes indicar cualquiera de los dos; la calculadora obtiene el otro.</p>
+
+  <h2>Envío a SUNAT: inmediato o con ticket</h2>
+  <p>Hay dos formas de envío, según el documento. Presiona <kbd>▶ Reproducir</kbd> para ver cada una paso a paso:</p>
+  <div class="diagram" data-seq="1. Tu sistema envía la factura firmada (sendBill)|2. SUNAT la valida en el momento|3. SUNAT responde con el CDR: ¡listo!|4. Resúmenes y bajas: se envían con sendSummary|5. SUNAT responde solo un número de ticket|6. Más tarde consultas el ticket (getStatus)|7. SUNAT devuelve el CDR del resumen o baja">
+    <svg viewBox="0 0 760 420" role="img" aria-label="Envío síncrono y asíncrono">
+      <rect class="svg-box accent" x="60" y="10" width="160" height="44" rx="8"/><text class="svg-title" x="140" y="37" text-anchor="middle">Tu sistema</text>
+      <rect class="svg-box primary" x="540" y="10" width="160" height="44" rx="8"/><text class="svg-title" x="620" y="37" text-anchor="middle">SUNAT</text>
+      <line x1="140" y1="54" x2="140" y2="410" class="svg-line" stroke-dasharray="4 4"/>
+      <line x1="620" y1="54" x2="620" y2="410" class="svg-line" stroke-dasharray="4 4"/>
+      <text x="380" y="78" text-anchor="middle" class="svg-sub">FACTURAS, BOLETAS, NOTAS → respuesta inmediata</text>
+      <g class="seq-step" data-step="0"><line x1="140" y1="100" x2="612" y2="100" stroke="var(--accent)" stroke-width="2" marker-end="url(#a2)"/><text x="380" y="94" text-anchor="middle" class="seq-msg">sendBill(factura.zip)</text></g>
+      <g class="seq-step" data-step="1"><rect x="600" y="112" width="40" height="40" rx="6" fill="var(--warn-soft)" stroke="var(--warn)"/><text x="620" y="137" text-anchor="middle" font-size="16">⚙️</text></g>
+      <g class="seq-step" data-step="2"><line x1="612" y1="170" x2="148" y2="170" stroke="var(--ok)" stroke-width="2" marker-end="url(#a2)"/><text x="380" y="164" text-anchor="middle" class="seq-msg">CDR: "La Factura F001-1 ha sido aceptada" ✅</text></g>
+      <text x="380" y="214" text-anchor="middle" class="svg-sub">RESÚMENES DIARIOS Y BAJAS → respuesta diferida (ticket)</text>
+      <g class="seq-step" data-step="3"><line x1="140" y1="236" x2="612" y2="236" stroke="var(--accent)" stroke-width="2" marker-end="url(#a2)"/><text x="380" y="230" text-anchor="middle" class="seq-msg">sendSummary(resumen.zip)</text></g>
+      <g class="seq-step" data-step="4"><line x1="612" y1="276" x2="148" y2="276" stroke="var(--fg-muted)" stroke-width="2" marker-end="url(#a2)"/><text x="380" y="270" text-anchor="middle" class="seq-msg">ticket: 1791609818383 🎫</text></g>
+      <g class="seq-step" data-step="5"><line x1="140" y1="330" x2="612" y2="330" stroke="var(--accent)" stroke-width="2" marker-end="url(#a2)"/><text x="380" y="324" text-anchor="middle" class="seq-msg">getStatus(ticket)  ⏱️ unos segundos después</text></g>
+      <g class="seq-step" data-step="6"><line x1="612" y1="378" x2="148" y2="378" stroke="var(--ok)" stroke-width="2" marker-end="url(#a2)"/><text x="380" y="372" text-anchor="middle" class="seq-msg">CDR del resumen ✅</text></g>
+      <defs><marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--fg-muted)"/></marker></defs>
+    </svg>
+    <div class="caption seq-label"></div>
+    <div class="controls"></div>
+  </div>
+  <p>Con la librería no necesitas recordar esto: <code>see.send(documento)</code> elige el método correcto según el tipo.
+    Para resúmenes y bajas, luego llamas a <code>see.getStatus(ticket)</code>.</p>
+
+  <h2>El CDR y los códigos de respuesta</h2>
+  <p>El CDR trae un <strong>código</strong> que indica el resultado:</p>
+  <div class="diagram">
+    <svg viewBox="0 0 800 130" role="img" aria-label="Rangos de códigos del CDR">
+      <rect x="10" y="20" width="120" height="50" rx="6" fill="var(--ok-soft)" stroke="var(--ok)"/>
+      <text x="70" y="42" text-anchor="middle" class="svg-title">0</text><text x="70" y="60" text-anchor="middle" class="svg-sub">ACEPTADO</text>
+      <rect x="140" y="20" width="180" height="50" rx="6" fill="var(--warn-soft)" stroke="var(--warn)"/>
+      <text x="230" y="42" text-anchor="middle" class="svg-title">0100 – 1999</text><text x="230" y="60" text-anchor="middle" class="svg-sub">EXCEPCIÓN: corrige y reenvía</text>
+      <rect x="330" y="20" width="200" height="50" rx="6" fill="var(--err-soft)" stroke="var(--err)"/>
+      <text x="430" y="42" text-anchor="middle" class="svg-title">2000 – 3999</text><text x="430" y="60" text-anchor="middle" class="svg-sub">RECHAZADO: usa otro número</text>
+      <rect x="540" y="20" width="250" height="50" rx="6" fill="var(--accent-soft)" stroke="var(--accent)"/>
+      <text x="665" y="42" text-anchor="middle" class="svg-title">4000 +</text><text x="665" y="60" text-anchor="middle" class="svg-sub">OBSERVACIONES (aceptado con avisos)</text>
+      <text x="400" y="105" text-anchor="middle" class="svg-sub">Un comprobante RECHAZADO no existe para SUNAT: corrige los datos y emite uno nuevo con otro correlativo.</text>
+    </svg>
+  </div>
+  <pre><code>const result = await see.send(factura);
+if (!result.isSuccess()) {
+  // no hubo CDR: error de conexión, credenciales o excepción (códigos 0100-1999)
+  console.log(result.getError().getCode(), result.getError().getMessage());
+} else {
+  const cdr = result.getCdrResponse();
+  const code = parseInt(cdr.getCode(), 10);
+  if (code === 0) console.log('ACEPTADO', cdr.getNotes());           // notas = observaciones
+  else if (code >= 2000 &amp;&amp; code &lt;= 3999) console.log('RECHAZADO', cdr.getDescription());
+}</code></pre>
+
+  <h2>Entorno de pruebas (beta) y producción</h2>
+  <table>
+    <thead><tr><th></th><th>Beta (pruebas)</th><th>Producción</th></tr></thead>
+    <tbody>
+      <tr><td>Endpoint</td><td><code>SunatEndpoints.FE_BETA</code></td><td><code>SunatEndpoints.FE_PRODUCCION</code></td></tr>
+      <tr><td>Usuario SOL</td><td><code>MODDATOS</code> / <code>moddatos</code> (cualquier RUC)</td><td>Tu usuario secundario SOL</td></tr>
+      <tr><td>Certificado</td><td>Cualquiera (incluso uno de prueba)</td><td>Tu certificado digital real</td></tr>
+      <tr><td>Validez legal</td><td><span class="badge warn">Ninguna</span></td><td><span class="badge ok">Comprobante real</span></td></tr>
+    </tbody>
+  </table>
+  <div class="callout warn"><span class="ci">⚠️</span><div><p>Desarrolla y prueba siempre en <strong>beta</strong>. Al pasar a
+    producción solo cambian el endpoint, la clave SOL y el certificado; el código es el mismo.</p></div></div>
+
+  <h2>Glosario</h2>
+  <table>
+    <tbody>
+      <tr><td><strong>CPE</strong></td><td>Comprobante de Pago Electrónico.</td></tr>
+      <tr><td><strong>SEE</strong></td><td>Sistema de Emisión Electrónica. Usar esta librería es "SEE – Del contribuyente" (tú emites directo a SUNAT).</td></tr>
+      <tr><td><strong>OSE</strong></td><td>Operador de Servicios Electrónicos: intermediario autorizado que valida por SUNAT. La librería puede enviar a un OSE cambiando el endpoint.</td></tr>
+      <tr><td><strong>UBL 2.1</strong></td><td>Universal Business Language: estándar XML que SUNAT adoptó para los comprobantes.</td></tr>
+      <tr><td><strong>CDR</strong></td><td>Constancia de Recepción: XML (dentro de un ZIP) con la respuesta de SUNAT.</td></tr>
+      <tr><td><strong>Clave SOL</strong></td><td>Usuario y clave de SUNAT Operaciones en Línea. Para emitir se usa un usuario secundario con permisos de facturación.</td></tr>
+      <tr><td><strong>Hash / resumen</strong></td><td>Valor <code>DigestValue</code> de la firma; se imprime en el PDF.</td></tr>
+      <tr><td><strong>Catálogos</strong></td><td>Tablas de códigos oficiales de SUNAT (tipo de documento, afectación, unidades de medida, etc.).</td></tr>
+      <tr><td><strong>GRE</strong></td><td>Guía de Remisión Electrónica. Desde 2022 se envía por una API REST con credenciales propias.</td></tr>
+    </tbody>
+  </table>
+</main>
+<script src="assets/app.js"></script>
+</body>
+</html>
