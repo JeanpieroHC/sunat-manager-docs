@@ -4,11 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Errores y FAQ · sunat-manager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
 <main>
-  <h1>🩺 Errores y preguntas frecuentes</h1>
+  <h1> Errores y preguntas frecuentes</h1>
   <p class="lead">Cómo diagnosticar un envío fallido, los errores más comunes de SUNAT y una lista de verificación para
     pasar a producción.</p>
 
@@ -19,20 +22,20 @@
       <path class="svg-line" d="M390 54 V80 M190 80 H590 M190 80 V100 M590 80 V100"/>
       <text x="190" y="96" text-anchor="end" class="svg-sub">isSuccess() = false </text>
       <text x="600" y="96" class="svg-sub"> isSuccess() = true</text>
-      <rect class="svg-box err" x="70" y="100" width="240" height="76" rx="8" style="stroke:var(--err)"/>
-      <text class="svg-title" x="190" y="124" text-anchor="middle">❌ No hubo CDR</text>
+      <rect class="svg-box err" x="70" y="100" width="240" height="76" rx="8"/>
+      <text class="svg-title" x="190" y="124" text-anchor="middle"> No hubo CDR</text>
       <text class="svg-sub" x="190" y="144" text-anchor="middle">result.getError(): conexión, credenciales</text>
       <text class="svg-sub" x="190" y="160" text-anchor="middle">o excepción 0100–1999 → corrige y reenvía</text>
       <rect class="svg-box ok" x="470" y="100" width="240" height="56" rx="8"/>
-      <text class="svg-title" x="590" y="124" text-anchor="middle">📬 Hay CDR</text>
+      <text class="svg-title" x="590" y="124" text-anchor="middle"> Hay CDR</text>
       <text class="svg-sub" x="590" y="142" text-anchor="middle">cdr.getCode()</text>
-      <path class="svg-line" d="M590 156 V190 M450 190 H730 M450 190 V210 M730 190 V210"/>
+      <path class="svg-line" d="M590 156 V190 M450 190 H680 M450 190 V210 M680 190 V210"/>
       <rect class="svg-box ok" x="360" y="210" width="180" height="76" rx="8"/>
-      <text class="svg-title" x="450" y="236" text-anchor="middle">✅ 0 = aceptado</text>
+      <text class="svg-title" x="450" y="236" text-anchor="middle"> 0 = aceptado</text>
       <text class="svg-sub" x="450" y="256" text-anchor="middle">revisa getNotes()</text>
       <text class="svg-sub" x="450" y="272" text-anchor="middle">(observaciones 4000+)</text>
-      <rect class="svg-box" x="640" y="210" width="180" height="76" rx="8" style="stroke:var(--err)" transform="translate(-50 0)"/>
-      <text class="svg-title" x="680" y="236" text-anchor="middle">⛔ 2000–3999</text>
+      <rect class="svg-box err" x="590" y="210" width="180" height="76" rx="8"/>
+      <text class="svg-title" x="680" y="236" text-anchor="middle"> 2000–3999</text>
       <text class="svg-sub" x="680" y="256" text-anchor="middle">rechazado: corrige y</text>
       <text class="svg-sub" x="680" y="272" text-anchor="middle">emite con otro número</text>
     </svg>
@@ -83,6 +86,7 @@
     <li><h4>Resúmenes y bajas</h4><p>Si usas resumen diario, consulta el ticket hasta obtener el CDR y guárdalo.</p></li>
   </ol>
 </main>
+<script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
 <script src="assets/app.js"></script>
 </body>
 </html>

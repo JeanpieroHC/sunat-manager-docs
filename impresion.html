@@ -4,23 +4,26 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>PDF y tickets · sunat-manager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
 <main>
-  <h1>🖨️ Representación impresa: PDF y tickets</h1>
+  <h1> Representación impresa: PDF y tickets</h1>
   <p class="lead">La representación impresa es lo que entregas al cliente. La librería genera el <strong>HTML</strong> con
     código QR, hash de la firma y todos los datos; luego lo conviertes a <strong>PDF</strong> o lo mandas a una ticketera.</p>
 
   <h2>Formatos disponibles</h2>
   <p>Haz clic en una imagen para verla completa. Son capturas reales generadas por la librería.</p>
   <div class="gallery">
-    <figure><img src="img/factura-a4.png" alt="Factura A4" loading="lazy"><figcaption><strong>A4</strong> · factura (plantilla original de Greenter)</figcaption></figure>
-    <figure><img src="img/factura-a5.png" alt="Factura A5" loading="lazy"><figcaption><strong>A5</strong> · media hoja</figcaption></figure>
-    <figure><img src="img/factura-80mm.png" alt="Ticket 80mm" loading="lazy"><figcaption><strong>Ticket 80 mm</strong> · factura a crédito</figcaption></figure>
-    <figure><img src="img/boleta-58mm.png" alt="Ticket 58mm" loading="lazy"><figcaption><strong>Ticket 58 mm</strong> · boleta</figcaption></figure>
-    <figure><img src="img/guia-80mm.png" alt="Guía 80mm" loading="lazy"><figcaption><strong>Ticket 80 mm</strong> · guía de remisión</figcaption></figure>
-    <figure><img src="img/guia-a4.png" alt="Guía A4" loading="lazy"><figcaption><strong>A4</strong> · guía de remisión</figcaption></figure>
+    <figure><img src="img/factura-a4.png" alt="Factura A4" loading="lazy"><figcaption><strong>A4</strong>factura (plantilla original de Greenter)</figcaption></figure>
+    <figure><img src="img/factura-a5.png" alt="Factura A5" loading="lazy"><figcaption><strong>A5</strong>media hoja</figcaption></figure>
+    <figure><img src="img/factura-80mm.png" alt="Ticket 80mm" loading="lazy"><figcaption><strong>Ticket 80 mm</strong>factura a crédito</figcaption></figure>
+    <figure><img src="img/boleta-58mm.png" alt="Ticket 58mm" loading="lazy"><figcaption><strong>Ticket 58 mm</strong>boleta</figcaption></figure>
+    <figure><img src="img/guia-80mm.png" alt="Guía 80mm" loading="lazy"><figcaption><strong>Ticket 80 mm</strong>guía de remisión</figcaption></figure>
+    <figure><img src="img/guia-a4.png" alt="Guía A4" loading="lazy"><figcaption><strong>A4</strong>guía de remisión</figcaption></figure>
   </div>
   <table>
     <thead><tr><th>Formato</th><th>Valor</th><th>Documentos</th></tr></thead>
@@ -110,7 +113,7 @@ pdf.setFormat('80mm', { height: '200mm' });                         // tamaño d
 
 const buffer = await pdf.render(factura, params);
 if (!buffer) console.error(pdf.getExporter().getError());</code></pre>
-      <div class="callout warn"><span class="ci">⚠️</span><div><p>wkhtmltopdf no admite alto automático: en tickets
+      <div class="callout warn"><span class="ci"><i data-lucide="triangle-alert"></i></span><div><p>wkhtmltopdf no admite alto automático: en tickets
         ajusta <code>height</code> según la cantidad de ítems, o usa Puppeteer.</p></div></div>
     </div>
     <div class="tab-panel" data-tab="Solo HTML">
@@ -135,6 +138,7 @@ report.setTemplate('mi-ticket.html.twig');</code></pre>
     <code>catalog('01')</code>, <code>image_b64</code>, <code>date('d/m/Y')</code>. Funciones: <code>qrCode(doc)</code>,
     <code>legend(doc.legends, '1000')</code>.</p>
 </main>
+<script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
 <script src="assets/app.js"></script>
 </body>
 </html>

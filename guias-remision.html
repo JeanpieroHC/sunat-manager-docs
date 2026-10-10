@@ -4,11 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Guías de remisión · sunat-manager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
 <main>
-  <h1>🚚 Guías de remisión electrónicas (GRE)</h1>
+  <h1> Guías de remisión electrónicas (GRE)</h1>
   <p class="lead">Desde 2022 las guías se envían por una <strong>API REST</strong> de SUNAT (no por SOAP como las
     facturas). La fachada <code>Api</code> se encarga del token OAuth2, el envío y la consulta del ticket.</p>
 
@@ -23,13 +26,13 @@
       <rect class="svg-box primary" x="540" y="10" width="160" height="44" rx="8"/><text class="svg-title" x="620" y="37" text-anchor="middle">API SUNAT</text>
       <line x1="140" y1="54" x2="140" y2="320" class="svg-line" stroke-dasharray="4 4"/>
       <line x1="620" y1="54" x2="620" y2="320" class="svg-line" stroke-dasharray="4 4"/>
-      <defs><marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--fg-muted)"/></marker></defs>
-      <g class="seq-step" data-step="0"><line x1="140" y1="90" x2="612" y2="90" stroke="var(--accent)" stroke-width="2" marker-end="url(#a3)"/><text x="380" y="84" text-anchor="middle" class="seq-msg">POST /oauth2/token (client_id, secret, usuario SOL)</text></g>
-      <g class="seq-step" data-step="1"><line x1="612" y1="130" x2="148" y2="130" stroke="var(--ok)" stroke-width="2" marker-end="url(#a3)"/><text x="380" y="124" text-anchor="middle" class="seq-msg">access_token 🔑</text></g>
-      <g class="seq-step" data-step="2"><line x1="140" y1="175" x2="612" y2="175" stroke="var(--accent)" stroke-width="2" marker-end="url(#a3)"/><text x="380" y="169" text-anchor="middle" class="seq-msg">POST /comprobantes/{archivo} (ZIP en base64 + hash)</text></g>
-      <g class="seq-step" data-step="3"><line x1="612" y1="215" x2="148" y2="215" stroke="var(--fg-muted)" stroke-width="2" marker-end="url(#a3)"/><text x="380" y="209" text-anchor="middle" class="seq-msg">numTicket 🎫</text></g>
-      <g class="seq-step" data-step="4"><line x1="140" y1="260" x2="612" y2="260" stroke="var(--accent)" stroke-width="2" marker-end="url(#a3)"/><text x="380" y="254" text-anchor="middle" class="seq-msg">GET /comprobantes/envios/{ticket}</text></g>
-      <g class="seq-step" data-step="5"><line x1="612" y1="300" x2="148" y2="300" stroke="var(--ok)" stroke-width="2" marker-end="url(#a3)"/><text x="380" y="294" text-anchor="middle" class="seq-msg">CDR ✅ (código 0)</text></g>
+      <defs><marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--muted)"/></marker></defs>
+      <g class="seq-step" data-step="0"><line x1="140" y1="90" x2="612" y2="90" stroke="var(--info)" stroke-width="2" marker-end="url(#a3)"/><text x="380" y="84" text-anchor="middle" class="seq-msg">POST /oauth2/token (client_id, secret, usuario SOL)</text></g>
+      <g class="seq-step" data-step="1"><line x1="612" y1="130" x2="148" y2="130" stroke="var(--ok)" stroke-width="2" marker-end="url(#a3)"/><text x="380" y="124" text-anchor="middle" class="seq-msg">access_token </text></g>
+      <g class="seq-step" data-step="2"><line x1="140" y1="175" x2="612" y2="175" stroke="var(--info)" stroke-width="2" marker-end="url(#a3)"/><text x="380" y="169" text-anchor="middle" class="seq-msg">POST /comprobantes/{archivo} (ZIP en base64 + hash)</text></g>
+      <g class="seq-step" data-step="3"><line x1="612" y1="215" x2="148" y2="215" stroke="var(--muted)" stroke-width="2" marker-end="url(#a3)"/><text x="380" y="209" text-anchor="middle" class="seq-msg">numTicket </text></g>
+      <g class="seq-step" data-step="4"><line x1="140" y1="260" x2="612" y2="260" stroke="var(--info)" stroke-width="2" marker-end="url(#a3)"/><text x="380" y="254" text-anchor="middle" class="seq-msg">GET /comprobantes/envios/{ticket}</text></g>
+      <g class="seq-step" data-step="5"><line x1="612" y1="300" x2="148" y2="300" stroke="var(--ok)" stroke-width="2" marker-end="url(#a3)"/><text x="380" y="294" text-anchor="middle" class="seq-msg">CDR  (código 0)</text></g>
     </svg>
     <div class="caption seq-label"></div>
     <div class="controls"></div>
@@ -128,10 +131,11 @@ console.log(status.isSuccess() ? status.getCdrResponse().getDescription() : stat
     </tbody>
   </table>
 
-  <div class="callout info"><span class="ci">💡</span><div><p>El token se guarda en memoria y se reutiliza hasta 10 minutos
+  <div class="callout info"><span class="ci"><i data-lucide="lightbulb"></i></span><div><p>El token se guarda en memoria y se reutiliza hasta 10 minutos
     antes de vencer. Si tienes varios procesos, puedes pasar tu propio almacén (Redis, base de datos) a
     <code>ApiFactory</code>.</p></div></div>
 </main>
+<script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
 <script src="assets/app.js"></script>
 </body>
 </html>

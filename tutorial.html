@@ -4,15 +4,18 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tutorial: tu primera factura · sunat-manager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
 <main>
-  <h1>🚀 Tutorial: tu primera factura</h1>
+  <h1> Tutorial: tu primera factura</h1>
   <p class="lead">En unos 10 minutos vas a emitir una factura real en el <strong>entorno de pruebas de SUNAT</strong>,
     recibir su CDR y generar el ticket para el cliente. No necesitas certificado ni clave SOL reales.</p>
 
-  <div class="callout info"><span class="ci">🎯</span><div><p><strong>Lo que lograrás:</strong> un script que envía una
+  <div class="callout info"><span class="ci"><i data-lucide="target"></i></span><div><p><strong>Lo que lograrás:</strong> un script que envía una
     factura a SUNAT beta y guarda tres archivos: el XML firmado, el CDR (respuesta de SUNAT) y un ticket HTML de 80 mm.</p></div></div>
 
   <h2>Paso a paso</h2>
@@ -35,7 +38,7 @@ npm pkg set type=module</code></pre>
         <div class="tab-panel" data-tab="Windows (PowerShell)"><pre><code class="no-hl">Get-Content llave.pem, cert.pem | Set-Content certificado.pem</code></pre></div>
         <div class="tab-panel" data-tab="Linux / macOS / Git Bash"><pre><code class="no-hl">cat llave.pem cert.pem > certificado.pem</code></pre></div>
       </div>
-      <div class="callout warn"><span class="ci">🔐</span><div><p>En producción usarás tu certificado real (archivo <code>.pfx</code>).
+      <div class="callout warn"><span class="ci"><i data-lucide="lock-keyhole"></i></span><div><p>En producción usarás tu certificado real (archivo <code>.pfx</code>).
         Ver <a href="certificados.html">Certificado digital</a> para convertirlo a PEM.</p></div></div>
     </li>
     <li>
@@ -90,14 +93,14 @@ const xml = see.getFactory().getLastXml();                       // XML firmado
 fs.writeFileSync(`${factura.getName()}.xml`, xml);
 
 if (!result.isSuccess()) {
-  console.error('❌ Error', result.getError().getCode(), result.getError().getMessage());
+  console.error('Error', result.getError().getCode(), result.getError().getMessage());
   process.exit(1);
 }
 
 // ── 5. Leer la respuesta (CDR) ──────────────────────────────────────
 const cdr = result.getCdrResponse();
 fs.writeFileSync(`R-${factura.getName()}.zip`, result.getCdrZip());
-console.log('✅', cdr.getDescription());
+console.log('Respuesta:', cdr.getDescription());
 if (cdr.getNotes().length) console.log('Observaciones:', cdr.getNotes());
 
 // ── 6. Ticket de 80 mm para el cliente ──────────────────────────────
@@ -114,7 +117,7 @@ fs.writeFileSync(`${factura.getName()}.html`, html);</code></pre>
       <pre><code class="no-hl">node emitir.js</code></pre>
       <pre data-title="salida"><code class="no-hl">Total: 236
 SON DOSCIENTOS TREINTA Y SEIS CON 00/100 SOLES
-✅ La Factura numero F001-1, ha sido aceptada</code></pre>
+Respuesta: La Factura numero F001-1, ha sido aceptada</code></pre>
       <p>Abre el archivo <code>.html</code> en el navegador para ver el ticket. En la carpeta tendrás:</p>
       <table>
         <tbody>
@@ -129,12 +132,12 @@ SON DOSCIENTOS TREINTA Y SEIS CON 00/100 SOLES
   <h2>¿Qué acaba de pasar?</h2>
   <div class="diagram" data-seq="DocumentMapper convirtió tu JSON en un objeto Invoice|SaleCalculator calculó IGV (36.00), total (236.00) y la leyenda en letras|See generó el XML UBL 2.1 y lo firmó con certificado.pem|Lo comprimió en ZIP y lo envió a SUNAT beta por SOAP|SUNAT respondió con el CDR: código 0 = aceptada|HtmlReport generó el ticket con QR y hash">
     <svg viewBox="0 0 860 150" role="img" aria-label="Etapas del script">
-      <g class="seq-step" data-step="0"><rect class="svg-box accent" x="5" y="30" width="125" height="70" rx="10"/><text class="svg-title" x="67" y="62" text-anchor="middle">🧩 Mapper</text><text class="svg-sub" x="67" y="82" text-anchor="middle">JSON → Invoice</text></g>
-      <g class="seq-step" data-step="1"><rect class="svg-box" x="150" y="30" width="125" height="70" rx="10"/><text class="svg-title" x="212" y="62" text-anchor="middle">🧮 Cálculo</text><text class="svg-sub" x="212" y="82" text-anchor="middle">IGV y totales</text></g>
-      <g class="seq-step" data-step="2"><rect class="svg-box" x="295" y="30" width="125" height="70" rx="10"/><text class="svg-title" x="357" y="62" text-anchor="middle">🔐 XML + firma</text><text class="svg-sub" x="357" y="82" text-anchor="middle">UBL 2.1</text></g>
-      <g class="seq-step" data-step="3"><rect class="svg-box primary" x="440" y="30" width="125" height="70" rx="10"/><text class="svg-title" x="502" y="62" text-anchor="middle">📤 Envío</text><text class="svg-sub" x="502" y="82" text-anchor="middle">ZIP por SOAP</text></g>
-      <g class="seq-step" data-step="4"><rect class="svg-box ok" x="585" y="30" width="125" height="70" rx="10"/><text class="svg-title" x="647" y="62" text-anchor="middle">📬 CDR</text><text class="svg-sub" x="647" y="82" text-anchor="middle">código 0</text></g>
-      <g class="seq-step" data-step="5"><rect class="svg-box accent" x="730" y="30" width="125" height="70" rx="10"/><text class="svg-title" x="792" y="62" text-anchor="middle">🖨️ Ticket</text><text class="svg-sub" x="792" y="82" text-anchor="middle">HTML con QR</text></g>
+      <g class="seq-step" data-step="0"><rect class="svg-box accent" x="5" y="30" width="125" height="70" rx="10"/><text class="svg-title" x="67" y="62" text-anchor="middle"> Mapper</text><text class="svg-sub" x="67" y="82" text-anchor="middle">JSON → Invoice</text></g>
+      <g class="seq-step" data-step="1"><rect class="svg-box" x="150" y="30" width="125" height="70" rx="10"/><text class="svg-title" x="212" y="62" text-anchor="middle"> Cálculo</text><text class="svg-sub" x="212" y="82" text-anchor="middle">IGV y totales</text></g>
+      <g class="seq-step" data-step="2"><rect class="svg-box" x="295" y="30" width="125" height="70" rx="10"/><text class="svg-title" x="357" y="62" text-anchor="middle"> XML + firma</text><text class="svg-sub" x="357" y="82" text-anchor="middle">UBL 2.1</text></g>
+      <g class="seq-step" data-step="3"><rect class="svg-box primary" x="440" y="30" width="125" height="70" rx="10"/><text class="svg-title" x="502" y="62" text-anchor="middle"> Envío</text><text class="svg-sub" x="502" y="82" text-anchor="middle">ZIP por SOAP</text></g>
+      <g class="seq-step" data-step="4"><rect class="svg-box ok" x="585" y="30" width="125" height="70" rx="10"/><text class="svg-title" x="647" y="62" text-anchor="middle"> CDR</text><text class="svg-sub" x="647" y="82" text-anchor="middle">código 0</text></g>
+      <g class="seq-step" data-step="5"><rect class="svg-box accent" x="730" y="30" width="125" height="70" rx="10"/><text class="svg-title" x="792" y="62" text-anchor="middle"> Ticket</text><text class="svg-sub" x="792" y="82" text-anchor="middle">HTML con QR</text></g>
     </svg>
     <div class="caption seq-label"></div>
     <div class="controls"></div>
@@ -142,10 +145,10 @@ SON DOSCIENTOS TREINTA Y SEIS CON 00/100 SOLES
 
   <h2>Siguientes pasos</h2>
   <div class="cards">
-    <a class="card" href="documentos.html"><div class="ci">🗂️</div><h4>Boletas, notas, resúmenes y bajas</h4><p>Ejemplos de cada tipo de documento.</p></a>
-    <a class="card" href="calculos.html"><div class="ci">🧮</div><h4>Exonerados, gratuitos, descuentos…</h4><p>Todos los casos de impuestos con ejemplos.</p></a>
-    <a class="card" href="impresion.html"><div class="ci">🖨️</div><h4>Generar PDF</h4><p>A4, A5 o tickets en PDF.</p></a>
-    <a class="card" href="errores.html"><div class="ci">🩺</div><h4>Pasar a producción</h4><p>Checklist y errores frecuentes.</p></a>
+    <a class="card" href="documentos.html"><div class="ci"><i data-lucide="files"></i></div><h4>Boletas, notas, resúmenes y bajas</h4><p>Ejemplos de cada tipo de documento.</p></a>
+    <a class="card" href="calculos.html"><div class="ci"><i data-lucide="calculator"></i></div><h4>Exonerados, gratuitos, descuentos…</h4><p>Todos los casos de impuestos con ejemplos.</p></a>
+    <a class="card" href="impresion.html"><div class="ci"><i data-lucide="printer"></i></div><h4>Generar PDF</h4><p>A4, A5 o tickets en PDF.</p></a>
+    <a class="card" href="errores.html"><div class="ci"><i data-lucide="life-buoy"></i></div><h4>Pasar a producción</h4><p>Checklist y errores frecuentes.</p></a>
   </div>
 
   <h2>Pasar a producción</h2>
@@ -153,9 +156,10 @@ SON DOSCIENTOS TREINTA Y SEIS CON 00/100 SOLES
   <pre><code>see.setService(SunatEndpoints.FE_PRODUCCION);
 see.setCertificate(fs.readFileSync('mi-certificado-real.pem', 'utf8'));
 see.setClaveSOL('20XXXXXXXXX', 'USUARIOSOL', 'claveSol');   // usuario secundario con permiso de emisión</code></pre>
-  <div class="callout err"><span class="ci">🛑</span><div><p>En producción, cada comprobante aceptado es <strong>real y tiene efectos
+  <div class="callout err"><span class="ci"><i data-lucide="octagon-alert"></i></span><div><p>En producción, cada comprobante aceptado es <strong>real y tiene efectos
     tributarios</strong>. Nunca reutilices un correlativo y guarda siempre el XML y el CDR.</p></div></div>
 </main>
+<script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
 <script src="assets/app.js"></script>
 </body>
 </html>

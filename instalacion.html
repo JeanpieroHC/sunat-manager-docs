@@ -4,11 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Instalación · sunat-manager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
 <main>
-  <h1>📦 Instalación</h1>
+  <h1> Instalación</h1>
   <p class="lead">El paquete es <strong>privado</strong>: se publica en GitHub Packages y solo pueden instalarlo las
     personas autorizadas. La configuración se hace una sola vez por computadora.</p>
 
@@ -61,7 +64,7 @@ console.log(montoEnLetras(1180.5));
     </li>
   </ol>
 
-  <div class="callout warn"><span class="ci">⚠️</span><div><p><strong>Tu proyecto debe usar módulos ES.</strong> Agrega
+  <div class="callout warn"><span class="ci"><i data-lucide="triangle-alert"></i></span><div><p><strong>Tu proyecto debe usar módulos ES.</strong> Agrega
     <code>"type": "module"</code> a tu <code>package.json</code> o usa archivos <code>.mjs</code>. Desde CommonJS puedes
     usar <code>const lib = await import('@jeanpierohc/sunat-manager')</code>.</p></div></div>
 
@@ -110,6 +113,7 @@ npm view @jeanpierohc/sunat-manager versions   # versiones publicadas</code></pr
   <details><summary><code>SyntaxError: Cannot use import statement outside a module</code></summary>
     <p>Agrega <code>"type": "module"</code> a tu <code>package.json</code> o renombra el archivo a <code>.mjs</code>.</p></details>
 </main>
+<script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
 <script src="assets/app.js"></script>
 </body>
 </html>

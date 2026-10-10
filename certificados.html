@@ -4,11 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Certificado digital · sunat-manager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
 <main>
-  <h1>🔐 Certificado digital y firma</h1>
+  <h1> Certificado digital y firma</h1>
   <p class="lead">Cada comprobante debe ir firmado con el certificado digital de tu empresa. La librería usa el formato
     <strong>PEM</strong> (texto) y te ayuda a convertir tu certificado <code>.pfx</code> / <code>.p12</code>.</p>
 
@@ -19,13 +22,13 @@
 
   <div class="diagram">
     <svg viewBox="0 0 760 170" role="img" aria-label="Cómo funciona la firma">
-      <rect class="svg-box" x="10" y="50" width="130" height="60" rx="8"/><text class="svg-title" x="75" y="78" text-anchor="middle">📄 XML</text><text class="svg-sub" x="75" y="96" text-anchor="middle">comprobante</text>
+      <rect class="svg-box" x="10" y="50" width="130" height="60" rx="8"/><text class="svg-title" x="75" y="78" text-anchor="middle"> XML</text><text class="svg-sub" x="75" y="96" text-anchor="middle">comprobante</text>
       <path class="svg-line svg-dash" d="M140 80 H190"/>
       <rect class="svg-box" x="190" y="50" width="150" height="60" rx="8"/><text class="svg-title" x="265" y="78" text-anchor="middle">#️⃣ Hash SHA-1</text><text class="svg-sub" x="265" y="96" text-anchor="middle">huella del contenido</text>
       <path class="svg-line svg-dash" d="M340 80 H390"/>
-      <rect class="svg-box primary" x="390" y="50" width="160" height="60" rx="8"/><text class="svg-title" x="470" y="78" text-anchor="middle">🔑 Llave privada</text><text class="svg-sub" x="470" y="96" text-anchor="middle">cifra la huella (RSA)</text>
+      <rect class="svg-box primary" x="390" y="50" width="160" height="60" rx="8"/><text class="svg-title" x="470" y="78" text-anchor="middle"> Llave privada</text><text class="svg-sub" x="470" y="96" text-anchor="middle">cifra la huella (RSA)</text>
       <path class="svg-line svg-dash" d="M550 80 H600"/>
-      <rect class="svg-box ok" x="600" y="50" width="150" height="60" rx="8"/><text class="svg-title" x="675" y="78" text-anchor="middle">✍️ ds:Signature</text><text class="svg-sub" x="675" y="96" text-anchor="middle">+ certificado público</text>
+      <rect class="svg-box ok" x="600" y="50" width="150" height="60" rx="8"/><text class="svg-title" x="675" y="78" text-anchor="middle"> ds:Signature</text><text class="svg-sub" x="675" y="96" text-anchor="middle">+ certificado público</text>
       <text x="380" y="150" text-anchor="middle" class="svg-sub">SUNAT usa el certificado público para comprobar que nadie modificó el XML después de firmarlo.</text>
     </svg>
   </div>
@@ -44,7 +47,7 @@ console.log(cert.getInfo());
   <p>Soporta los formatos usados en Perú: certificados modernos (AES-256), antiguos (3DES / RC2-40) y contraseñas con
     tildes o <code>ñ</code>. Si la contraseña es incorrecta lanza <em>"Contraseña del certificado incorrecta"</em>.</p>
 
-  <div class="callout warn"><span class="ci">🔒</span><div>
+  <div class="callout warn"><span class="ci"><i data-lucide="lock-keyhole"></i></span><div>
     <p><strong>Protege el archivo PEM:</strong> contiene tu llave privada sin contraseña. No lo subas a Git, guárdalo con
       permisos restringidos o en un gestor de secretos, y cárgalo en tiempo de ejecución.</p>
   </div></div>
@@ -67,6 +70,7 @@ signer.verify(firmado);                          // true si la firma es válida<
   <pre><code class="no-hl">openssl req -x509 -newkey rsa:2048 -nodes -keyout llave.pem -out cert.pem -days 365 -subj "/CN=PRUEBA"
 cat llave.pem cert.pem > certificado.pem</code></pre>
 </main>
+<script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
 <script src="assets/app.js"></script>
 </body>
 </html>

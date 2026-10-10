@@ -87,19 +87,20 @@
   const opts = { igv: 18, ivap: 4, icbper: 0.5, conIgv: true, moneda: 'PEN' };
 
   root.innerHTML = `
-    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px;align-items:end">
-      <div><label>Los precios ingresados…</label><select id="pg-mode"><option value="1">incluyen IGV (precio)</option><option value="0">no incluyen IGV (valor)</option></select></div>
-      <div><label>Moneda</label><select id="pg-cur"><option>PEN</option><option>USD</option><option>EUR</option></select></div>
+    <div class="pg-head">
+      <div style="min-width:200px"><label for="pg-mode">Los precios ingresados</label><select id="pg-mode"><option value="1">incluyen IGV (precio)</option><option value="0">no incluyen IGV (valor)</option></select></div>
+      <div style="width:110px"><label for="pg-cur">Moneda</label><select id="pg-cur"><option>PEN</option><option>USD</option><option>EUR</option></select></div>
     </div>
-    <div class="pg-row" style="font-size:.78rem;color:var(--fg-muted)"><span>Descripción</span><span>Cantidad</span><span>Precio</span><span>Afectación</span><span></span></div>
-    <div id="pg-items"></div>
-    <button class="icon-btn" id="pg-add">＋ Agregar ítem</button>
+    <div class="pg-body">
+      <div class="pg-row head"><span>Descripción</span><span>Cantidad</span><span>Precio</span><span>Afectación</span><span></span></div>
+      <div id="pg-items"></div>
+      <button class="icon-btn" id="pg-add"><i data-lucide="plus"></i>Agregar ítem</button>
+    </div>
     <div class="pg-out">
-      <div><table id="pg-lines"></table></div>
-      <div><table id="pg-totals"></table><div class="legend-box" id="pg-legend"></div></div>
+      <div class="table-wrap"><table id="pg-lines"></table></div>
+      <div><div class="table-wrap"><table id="pg-totals"></table></div><div class="legend-box" id="pg-legend"></div></div>
     </div>
-    <h4 style="margin:16px 0 6px">JSON equivalente para <code>DocumentMapper</code></h4>
-    <pre><code id="pg-json" class="no-hl"></code></pre>`;
+    <div class="pg-json"><h4>JSON equivalente para <code>DocumentMapper</code></h4><pre><code id="pg-json"></code></pre></div>`;
 
   const $ = (id) => root.querySelector(id);
   const render = () => {
@@ -109,22 +110,23 @@
         <input data-k="cantidad" type="number" min="0" step="any" value="${it.cantidad}">
         <input data-k="precio" type="number" min="0" step="any" value="${it.precio}">
         <select data-k="afe">${AFE.map(([c, t]) => `<option value="${c}" ${c === it.afe ? 'selected' : ''}>${c} · ${t}</option>`).join('')}</select>
-        <button class="icon-btn" data-del title="Quitar">✕</button>
-        <label style="grid-column:1/-1;margin:-4px 0 4px;display:flex;gap:6px;align-items:center"><input type="checkbox" data-k="bolsa" style="width:auto" ${it.bolsa ? 'checked' : ''}> bolsa plástica (ICBPER S/ 0.50 por unidad; con IGV, el precio incluye el ICBPER)</label>
+        <button class="icon-btn" data-del title="Quitar ítem" aria-label="Quitar ítem"><i data-lucide="trash-2"></i></button>
+        <label class="check"><input type="checkbox" data-k="bolsa" ${it.bolsa ? 'checked' : ''}> Bolsa plástica (ICBPER S/ 0.50 por unidad; si el precio incluye IGV, también incluye el ICBPER)</label>
       </div>`).join('');
     update();
+    if (window.docsIcons) window.docsIcons();
   };
   const update = () => {
     const res = calc(items, opts);
     const cur = opts.moneda === 'PEN' ? 'S/' : opts.moneda === 'USD' ? '$' : '€';
-    $('#pg-lines').innerHTML = '<thead><tr><th>Ítem</th><th>Valor venta</th><th>IGV</th><th>Total</th></tr></thead><tbody>'
-      + res.lines.map((l) => `<tr><td>${l.desc}</td><td>${fmt(l.vv)}</td><td>${fmt(l.igv)}</td><td>${l.gratis ? '<span class="badge info">GRATIS</span>' : fmt(l.total)}</td></tr>`).join('') + '</tbody>';
-    const row = (k, v, bold) => (v ? `<tr><td>${k}</td><td style="text-align:right">${bold ? '<strong>' : ''}${cur} ${fmt(v)}${bold ? '</strong>' : ''}</td></tr>` : '');
+    $('#pg-lines').innerHTML = '<thead><tr><th>Ítem</th><th class="num">Valor venta</th><th class="num">IGV</th><th class="num">Total</th></tr></thead><tbody>'
+      + res.lines.map((l) => `<tr><td>${l.desc}</td><td class="num">${fmt(l.vv)}</td><td class="num">${fmt(l.igv)}</td><td class="num">${l.gratis ? '<span class="badge info">Gratuito</span>' : fmt(l.total)}</td></tr>`).join('') + '</tbody>';
+    const row = (k, v) => (v ? `<tr><td>${k}</td><td class="num">${cur} ${fmt(v)}</td></tr>` : '');
     const s = res.s;
     $('#pg-totals').innerHTML = '<tbody>' + row('Op. gravadas', r2(s.grav)) + row('Op. exoneradas', r2(s.exo)) + row('Op. inafectas', r2(s.ina))
       + row('Op. exportación', r2(s.exp)) + row('Base IVAP', r2(s.ivapBase)) + row('Op. gratuitas', r2(s.grat))
-      + (s.grav ? row('IGV 18%', r2(s.igv) || 0.000001) : '') + row('IVAP', r2(s.ivap)) + row('ICBPER', r2(s.icbper))
-      + `<tr><td><strong>TOTAL</strong></td><td style="text-align:right" class="pg-total">${cur} ${fmt(res.total)}</td></tr></tbody>`;
+      + (s.grav ? `<tr><td>IGV 18%</td><td class="num">${cur} ${fmt(r2(s.igv))}</td></tr>` : '') + row('IVAP', r2(s.ivap)) + row('ICBPER', r2(s.icbper))
+      + `<tr class="pg-total"><td>Total</td><td class="num">${cur} ${fmt(res.total)}</td></tr></tbody>`;
     $('#pg-legend').textContent = letras(res.total, opts.moneda);
     const json = {
       moneda: opts.moneda,
@@ -152,8 +154,8 @@
     if (e.target.id === 'pg-cur') { opts.moneda = e.target.value; update(); }
   });
   root.addEventListener('click', (e) => {
-    if (e.target.id === 'pg-add') { items.push({ desc: 'NUEVO ÍTEM', cantidad: 1, precio: 10, afe: '10', bolsa: false }); render(); }
-    if (e.target.dataset.del !== undefined) {
+    if (e.target.closest('#pg-add')) { items.push({ desc: 'NUEVO ÍTEM', cantidad: 1, precio: 10, afe: '10', bolsa: false }); render(); }
+    if (e.target.closest('[data-del]')) {
       items = items.filter((_, i) => i !== Number(e.target.closest('.pg-row').dataset.i));
       render();
     }

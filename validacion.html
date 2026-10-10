@@ -4,11 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Validar y leer XML · sunat-manager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
 <main>
-  <h1>✅ Validar y leer XML</h1>
+  <h1> Validar y leer XML</h1>
   <p class="lead">Detectar errores <strong>antes</strong> de enviar ahorra correlativos rechazados. La librería tiene dos
     niveles de validación, además de herramientas para leer XML existentes.</p>
 
@@ -89,6 +92,7 @@ const html = new HtmlReport().render(factura, { system: { hash: '...' } });</cod
   </table>
   <p>Para obtener solo el hash (resumen) de un XML firmado: <code>new XmlUtils().getHashSign(xml)</code>.</p>
 </main>
+<script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
 <script src="assets/app.js"></script>
 </body>
 </html>

@@ -4,11 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Comprobantes desde JSON · sunat-manager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
 <main>
-  <h1>🧾 Comprobantes desde JSON</h1>
+  <h1> Comprobantes desde JSON</h1>
   <p class="lead"><code>DocumentMapper</code> convierte un objeto JSON simple (claves en español, <code>snake_case</code>) en
     el modelo que la librería envía a SUNAT. Es ideal cuando la venta llega desde tu frontend, otra API o la base de datos.</p>
 
@@ -28,10 +31,10 @@
       <path class="svg-line svg-dash" d="M500 85 H570"/>
       <rect class="svg-box ok" x="570" y="20" width="240" height="130" rx="10"/>
       <text class="svg-title" x="690" y="50" text-anchor="middle">Invoice listo para enviar</text>
-      <text class="svg-sub" x="690" y="74" text-anchor="middle">✔ IGV y totales</text>
-      <text class="svg-sub" x="690" y="92" text-anchor="middle">✔ leyenda en letras</text>
-      <text class="svg-sub" x="690" y="110" text-anchor="middle">✔ cuotas y detracción</text>
-      <text class="svg-sub" x="690" y="128" text-anchor="middle">✔ valores por defecto</text>
+      <text class="svg-sub" x="690" y="74" text-anchor="middle"> IGV y totales</text>
+      <text class="svg-sub" x="690" y="92" text-anchor="middle"> leyenda en letras</text>
+      <text class="svg-sub" x="690" y="110" text-anchor="middle"> cuotas y detracción</text>
+      <text class="svg-sub" x="690" y="128" text-anchor="middle"> valores por defecto</text>
     </svg>
   </div>
 
@@ -64,10 +67,10 @@ const doc = mapper.create(req.body);        // elige según tipo_documento (01, 
   <table>
     <thead><tr><th>Campo</th><th>Requerido</th><th>Descripción</th></tr></thead>
     <tbody>
-      <tr><td><code>ruc</code></td><td>✔</td><td>RUC del emisor</td></tr>
-      <tr><td><code>razon_social</code></td><td>✔</td><td>Razón social</td></tr>
+      <tr><td><code>ruc</code></td><td><i data-lucide="check"></i></td><td>RUC del emisor</td></tr>
+      <tr><td><code>razon_social</code></td><td><i data-lucide="check"></i></td><td>Razón social</td></tr>
       <tr><td><code>nombre_comercial</code></td><td></td><td>Por defecto, la razón social</td></tr>
-      <tr><td><code>ubigeo</code>, <code>departamento</code>, <code>provincia</code>, <code>distrito</code>, <code>direccion</code></td><td>✔</td><td>Domicilio fiscal (ubigeo INEI de 6 dígitos)</td></tr>
+      <tr><td><code>ubigeo</code>, <code>departamento</code>, <code>provincia</code>, <code>distrito</code>, <code>direccion</code></td><td><i data-lucide="check"></i></td><td>Domicilio fiscal (ubigeo INEI de 6 dígitos)</td></tr>
       <tr><td><code>urbanizacion</code></td><td></td><td>Por defecto <code>-</code></td></tr>
       <tr><td><code>cod_local</code></td><td></td><td>Código de establecimiento anexo, por defecto <code>0000</code></td></tr>
       <tr><td><code>email</code>, <code>telefono</code></td><td></td><td>Contacto</td></tr>
@@ -260,9 +263,10 @@ app.post('/comprobantes', async (req, res) => {
 });
 
 app.listen(3000);</code></pre>
-  <div class="callout info"><span class="ci">💡</span><div><p>Las claves aceptadas son las mismas que usaba el proyecto Laravel
+  <div class="callout info"><span class="ci"><i data-lucide="lightbulb"></i></span><div><p>Las claves aceptadas son las mismas que usaba el proyecto Laravel
     <code>/API</code>, así que puedes reutilizar sus colecciones de Postman.</p></div></div>
 </main>
+<script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
 <script src="assets/app.js"></script>
 </body>
 </html>

@@ -4,14 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Referencia de la API · sunat-manager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
 <main>
-  <h1>🧩 Referencia de la API</h1>
+  <h1> Referencia de la API</h1>
   <p class="lead">Clases y métodos principales. Los modelos siguen la convención de Greenter: cada propiedad tiene
     <code>getX()</code> y <code>setX(valor)</code>, y los <code>set</code> se pueden encadenar.</p>
-  <div class="callout info"><span class="ci">⏳</span><div><p><strong>Asíncrono:</strong> todo lo que habla con SUNAT o genera
+  <div class="callout info"><span class="ci"><i data-lucide="clock"></i></span><div><p><strong>Asíncrono:</strong> todo lo que habla con SUNAT o genera
     PDF devuelve una <code>Promise</code> (usa <code>await</code>): <code>See.send</code>, <code>See.getStatus</code>,
     <code>Api.*</code>, <code>ConsultaCpe.*</code>, <code>PdfReport.render</code>. Generar XML, firmar, calcular, validar y
     leer XML es síncrono.</p></div></div>
@@ -154,6 +157,7 @@
     </tbody>
   </table>
 </main>
+<script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
 <script src="assets/app.js"></script>
 </body>
 </html>

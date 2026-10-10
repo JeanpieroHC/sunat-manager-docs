@@ -4,11 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Cálculo de impuestos · sunat-manager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
 <main>
-  <h1>🧮 Cálculo de impuestos y totales</h1>
+  <h1> Cálculo de impuestos y totales</h1>
   <p class="lead">SUNAT rechaza un comprobante si sus montos no cuadran al céntimo. <code>SaleCalculator</code> hace esos
     cálculos por ti: indicas cantidades y precios, y completa el IGV, los totales y las leyendas.</p>
 
@@ -16,7 +19,7 @@
   <p>Cambia cantidades, precios y tipos de afectación y mira cómo se recalcula todo. Abajo verás el JSON que enviarías a
     <code>DocumentMapper</code> para obtener el mismo resultado.</p>
   <div class="playground" id="playground"></div>
-  <div class="callout info"><span class="ci">ℹ️</span><div><p>Esta calculadora es una demostración simplificada que corre
+  <div class="callout info"><span class="ci"><i data-lucide="info"></i></span><div><p>Esta calculadora es una demostración simplificada que corre
     en tu navegador. La librería además maneja ISC, descuentos, cargos, anticipos, percepción, detracción y cuotas.</p></div></div>
 
   <h2>Cómo se forma el total</h2>
@@ -24,10 +27,10 @@
     <svg viewBox="0 0 820 230" role="img" aria-label="Composición del total">
       <text x="10" y="24" class="svg-title">Ejemplo: 2 × S/ 59.00 (con IGV) + 1 libro inafecto S/ 45.00 + 1 bolsa S/ 0.62 (con IGV e ICBPER)</text>
       <g>
-        <rect x="10" y="50" width="400" height="44" fill="var(--accent-soft)" stroke="var(--accent)"/><text x="210" y="77" text-anchor="middle" class="svg-title">Op. gravadas 100.10</text>
+        <rect x="10" y="50" width="400" height="44" fill="var(--info-soft)" stroke="var(--info)"/><text x="210" y="77" text-anchor="middle" class="svg-title">Op. gravadas 100.10</text>
         <rect x="410" y="50" width="72" height="44" fill="var(--warn-soft)" stroke="var(--warn)"/><text x="446" y="77" text-anchor="middle" class="svg-title">IGV 18.02</text>
         <rect x="482" y="50" width="180" height="44" fill="var(--ok-soft)" stroke="var(--ok)"/><text x="572" y="77" text-anchor="middle" class="svg-title">Op. inafectas 45.00</text>
-        <rect x="662" y="50" width="40" height="44" fill="var(--primary-soft)" stroke="var(--primary)"/><text x="682" y="77" text-anchor="middle" class="svg-sub">0.50</text>
+        <rect x="662" y="50" width="40" height="44" fill="var(--accent-soft)" stroke="var(--accent)"/><text x="682" y="77" text-anchor="middle" class="svg-sub">0.50</text>
       </g>
       <path d="M10 104 V114 H702 V104" class="svg-line"/>
       <text x="356" y="134" text-anchor="middle" class="svg-title">TOTAL = valor de venta + IGV + ICBPER = S/ 163.62</text>
@@ -89,7 +92,7 @@ invoice.getLegends()[0].getValue(); // SON CIENTO DIECIOCHO CON 62/100 SOLES</co
 // ISC = 200 × 20% = 40 · base IGV = 200 + 40 = 240 · IGV = 43.20
 { descripcion: 'BOLSA', cantidad: 3, mto_valor_unitario: 0.10, icbper: true },
 // ICBPER = 3 × 0.50 = 1.50</code></pre>
-  <div class="callout warn"><span class="ci">⚠️</span><div><p>Para ICBPER marca el ítem con <code>icbper: true</code>
+  <div class="callout warn"><span class="ci"><i data-lucide="triangle-alert"></i></span><div><p>Para ICBPER marca el ítem con <code>icbper: true</code>
     (o <code>setIcbper(true)</code>). El modelo hereda de greenter un factor por defecto de 0.30, que se ignora.</p></div></div>
 
   <h3>Descuentos, cargos y redondeo</h3>
@@ -148,11 +151,13 @@ mapper.invoice({ detalles: [{ descripcion: 'ARROZ PILADO', cantidad: 10, mto_val
   <h2>Monto en letras</h2>
   <p>La leyenda 1000 ("SON … CON xx/100 SOLES") es obligatoria. Pruébalo:</p>
   <div class="playground" id="monto-letras">
-    <div style="display:grid;grid-template-columns:2fr 1fr;gap:10px">
-      <div><label>Monto</label><input type="number" value="21180.50" step="0.01" min="0"></div>
-      <div><label>Moneda</label><select><option>PEN</option><option>USD</option><option>EUR</option></select></div>
+    <div class="pg-body">
+      <div style="display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:10px">
+        <div><label for="ml-monto">Monto</label><input id="ml-monto" type="number" value="21180.50" step="0.01" min="0"></div>
+        <div><label for="ml-moneda">Moneda</label><select id="ml-moneda"><option>PEN</option><option>USD</option><option>EUR</option></select></div>
+      </div>
+      <div class="legend-box"></div>
     </div>
-    <div class="legend-box" style="margin-top:10px"></div>
   </div>
   <pre><code>import { montoEnLetras } from '@jeanpierohc/sunat-manager';
 montoEnLetras(21180.5);                      // SON VEINTIÚN MIL CIENTO OCHENTA CON 50/100 SOLES
@@ -171,6 +176,7 @@ montoEnLetras(15, 'PEN', { prefix: '' });    // QUINCE CON 00/100 SOLES</code></
     </tbody>
   </table>
 </main>
+<script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
 <script src="assets/app.js"></script>
 <script src="assets/playground.js"></script>
 </body>
